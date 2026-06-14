@@ -1,0 +1,1 @@
+-- 合集别名分类说明（category=COLLECTION，standard_word=合集名，alias_word=口语别名，全局 UNIQUE）

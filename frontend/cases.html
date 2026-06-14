@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客户案例 - AI IMBot | AI驱动的桌面机器人工具 | 智能订单自动化</title>
+    <meta name="description" content="查看AI IMBot在餐饮配送、火锅食材供应、茶饮咖啡原料等行业的真实案例。了解如何通过IM订单自动化提升配送效率90%，节省人工成本80%，实现订单零遗漏。">
+    <meta name="keywords" content="AI IMBot, 客户案例, 案例展示, IM订单, 配送效率, 订单自动化, 餐饮配送, 火锅配送, 茶饮咖啡, 实际应用">
+    
+    <link rel="icon" type="image/x-icon" href="./public/favicon.ico">
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link rel="stylesheet" href="./public/css/common.css">
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "AI IMBot 客户案例",
+      "description": "AI驱动的桌面机器人工具真实应用场景和客户案例展示",
+      "url": "https://imbot.ai/cases.html",
+      "isPartOf": {
+        "@type": "SoftwareApplication",
+        "name": "AI IMBot",
+        "applicationCategory": "BusinessApplication"
+      }
+    }
+    </script>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+    
+    <style>
+        html { scroll-behavior: smooth; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; line-height: 1.6; color: var(--text-primary); overflow-x: hidden; background: #f8fafc; }
+
+        .hero { background: var(--gradient-primary); color: #fff; padding: 160px 20px 60px; text-align: center; position: relative; overflow: hidden; }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        }
+        .hero-content { position: relative; z-index: 1; }
+        .hero h1 { font-size: 48px; margin-bottom: 15px; font-weight: 800; }
+        .hero p { font-size: 20px; opacity: 0.95; max-width: 700px; margin: 0 auto; }
+        .hero-buttons { display: flex; gap: 16px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+        .hero-buttons .el-button { min-width: 160px; border-radius: 20px; }
+
+        .cases { padding: 100px 20px; background: #fff; }
+        .section-title { text-align: center; font-size: 40px; margin-bottom: 20px; color: var(--text-primary); font-weight: 800; }
+        .section-subtitle { text-align: center; font-size: 18px; color: var(--text-muted); margin-bottom: 80px; max-width: 700px; margin-left: auto; margin-right: auto; }
+        .case-grid { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 35px; }
+        .case-card { 
+            background: #fff; 
+            border-radius: 24px; 
+            border: 1px solid #e2e8f0; 
+            overflow: hidden; 
+            transition: all 0.4s; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
+        }
+        .case-card:hover { transform: translateY(-12px); box-shadow: 0 20px 50px rgba(99, 102, 241, 0.12); border-color: var(--primary-color); }
+        .case-header { padding: 35px; background: var(--bg-dark); color: #fff; position: relative; overflow: hidden; }
+        .case-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
+        }
+        .case-header-content { position: relative; z-index: 1; }
+        .case-header h3 { font-size: 24px; margin-bottom: 8px; }
+        .case-header .industry-tag { display: inline-block; background: rgba(255,255,255,0.15); padding: 6px 16px; border-radius: 20px; font-size: 13px; margin-top: 10px; }
+        .case-body { padding: 35px; }
+        .case-problem { margin-bottom: 25px; }
+        .case-problem h4 { color: #ef4444; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .case-problem p { color: var(--text-muted); font-size: 15px; line-height: 1.8; }
+        .case-solution { margin-bottom: 25px; }
+        .case-solution h4 { color: var(--accent-color); margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .case-solution p { color: var(--text-muted); font-size: 15px; line-height: 1.8; }
+        .case-results { background: #f8fafc; padding: 25px; border-radius: 16px; margin-top: 25px; }
+        .case-results h4 { color: var(--primary-color); margin-bottom: 20px; font-size: 16px; }
+        .result-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e2e8f0; align-items: center; }
+        .result-item:last-child { border-bottom: none; }
+        .result-label { color: var(--text-muted); font-size: 14px; }
+        .result-value { color: var(--accent-color); font-weight: 700; font-size: 16px; }
+
+        .stats { padding: 100px 20px; background: var(--bg-dark); color: #fff; }
+        .stats-title { text-align: center; font-size: 36px; margin-bottom: 60px; font-weight: 800; }
+        .stats-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px; }
+        .stat-item { text-align: center; padding: 30px; background: rgba(255,255,255,0.05); border-radius: 20px; }
+        .stat-number { font-size: 56px; font-weight: 900; margin-bottom: 10px; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-desc { font-size: 16px; opacity: 0.9; }
+
+        .footer { background: #020617; color: #94a3b8; padding: 80px 20px 40px; }
+        .footer-content { max-width: 1200px; margin: 0 auto; }
+        .footer-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 50px; margin-bottom: 60px; }
+        .footer-brand h3 { font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 20px; }
+        .footer-brand h3 span { background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .footer-brand p { font-size: 14px; line-height: 1.8; color: #64748b; }
+        .footer-links h4 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 20px; }
+        .footer-links ul { list-style: none; }
+        .footer-links li { margin-bottom: 12px; }
+        .footer-links a { color: #94a3b8; text-decoration: none; transition: color 0.3s; }
+        .footer-links a:hover { color: var(--primary-color); }
+        .footer-bottom { padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .footer-bottom p { font-size: 14px; }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 34px; }
+            .case-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .stat-number { font-size: 36px; }
+            .footer-top { grid-template-columns: 1fr; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="navbar" data-page="cases"></div>
+
+        <section class="hero">
+            <div class="hero-content">
+                <h1>客户成功案例</h1>
+                <p>看AI IMBot如何帮助企业提升效率、降低成本、实现数字化转型</p>
+                <div class="hero-buttons">
+                    <el-button type="primary" @click="goToDownload">立即体验</el-button>
+                    <el-button type="success" @click="goToIndustries">查看行业方案</el-button>
+                </div>
+            </div>
+        </section>
+
+        <section class="cases">
+            <h2 class="section-title">真实应用场景</h2>
+            <p class="section-subtitle">AI IMBot已经帮助500+企业实现IM订单自动化，平均效率提升90%+</p>
+            <div class="case-grid">
+                <div class="case-card">
+                    <div class="case-header">
+                        <div class="case-header-content">
+                            <h3>🍜 福州餐饮配送中心</h3>
+                            <span class="industry-tag">餐饮配送</span>
+                        </div>
+                    </div>
+                    <div class="case-body">
+                        <div class="case-problem">
+                            <h4><el-icon><AlertCircle /></el-icon> 使用前痛点</h4>
+                            <p>每天需要处理120+群组的订单消息，3名员工专职手动录入Excel，错误率高达15%，经常漏单错单，客户投诉频繁。</p>
+                        </div>
+                        <div class="case-solution">
+                            <h4><el-icon><CheckCircle /></el-icon> AI IMBot解决方案</h4>
+                            <p>部署AI IMBot自动捕获IM订单，使用餐饮行业模板，自动识别特色食材，一键生成采购单和配送单。</p>
+                        </div>
+                        <div class="case-results">
+                            <h4><el-icon><TrendingUp /></el-icon> 使用效果</h4>
+                            <div class="result-item">
+                                <span class="result-label">订单处理效率</span>
+                                <span class="result-value">提升 92%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">人工成本节省</span>
+                                <span class="result-value">减少 2人/天</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">订单准确率</span>
+                                <span class="result-value">提升至 99.5%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="case-card">
+                    <div class="case-header">
+                        <div class="case-header-content">
+                            <h3>🍲 成都火锅食材供应链</h3>
+                            <span class="industry-tag">火锅食材</span>
+                        </div>
+                    </div>
+                    <div class="case-body">
+                        <div class="case-problem">
+                            <h4><el-icon><AlertCircle /></el-icon> 使用前痛点</h4>
+                            <p>服务200+火锅店，每天订单量300+，需要区分荤素、锅底要求、蘸料偏好，手动分类耗时耗力，月底对账困难。</p>
+                        </div>
+                        <div class="case-solution">
+                            <h4><el-icon><CheckCircle /></el-icon> AI IMBot解决方案</h4>
+                            <p>使用火锅店行业模板，自动识别荤素分类、锅底口味、蘸料偏好，自动生成日/周/月报表，支持多维度统计。</p>
+                        </div>
+                        <div class="case-results">
+                            <h4><el-icon><TrendingUp /></el-icon> 使用效果</h4>
+                            <div class="result-item">
+                                <span class="result-label">分类统计时间</span>
+                                <span class="result-value">从3小时缩短至5分钟</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">客户满意度</span>
+                                <span class="result-value">提升 45%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">月度对账效率</span>
+                                <span class="result-value">提升 85%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="case-card">
+                    <div class="case-header">
+                        <div class="case-header-content">
+                            <h3>🧋 连锁茶饮品牌区域配送</h3>
+                            <span class="industry-tag">茶饮咖啡</span>
+                        </div>
+                    </div>
+                    <div class="case-body">
+                        <div class="case-problem">
+                            <h4><el-icon><AlertCircle /></el-icon> 使用前痛点</h4>
+                            <p>管理50家门店原料补货，各店糖度要求、配料偏好不同，经常发错货，门店投诉多，库存管理混乱。</p>
+                        </div>
+                        <div class="case-solution">
+                            <h4><el-icon><CheckCircle /></el-icon> AI IMBot解决方案</h4>
+                            <p>使用茶饮咖啡行业模板，自动识别糖度要求、配料偏好，支持按门店编号快捷下单，自动汇总各分店需求。</p>
+                        </div>
+                        <div class="case-results">
+                            <h4><el-icon><TrendingUp /></el-icon> 使用效果</h4>
+                            <div class="result-item">
+                                <span class="result-label">发货准确率</span>
+                                <span class="result-value">提升至 99.8%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">门店投诉率</span>
+                                <span class="result-value">下降 78%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">库存周转率</span>
+                                <span class="result-value">提升 35%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="case-card">
+                    <div class="case-header">
+                        <div class="case-header-content">
+                            <h3>🍱 日料食材进口配送商</h3>
+                            <span class="industry-tag">日料寿司</span>
+                        </div>
+                    </div>
+                    <div class="case-body">
+                        <div class="case-problem">
+                            <h4><el-icon><AlertCircle /></el-icon> 使用前痛点</h4>
+                            <p>进口海鲜食材价格高、保质期短，需要精准统计各店订单，避免浪费。手动统计容易出错，库存损耗率高。</p>
+                        </div>
+                        <div class="case-solution">
+                            <h4><el-icon><CheckCircle /></el-icon> AI IMBot解决方案</h4>
+                            <p>使用日料寿司行业模板，精准识别海鲜食材，支持寿司套餐识别，自动生成采购计划，减少库存积压。</p>
+                        </div>
+                        <div class="case-results">
+                            <h4><el-icon><TrendingUp /></el-icon> 使用效果</h4>
+                            <div class="result-item">
+                                <span class="result-label">库存损耗率</span>
+                                <span class="result-value">降低 62%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">订单处理速度</span>
+                                <span class="result-value">提升 88%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">年度节省成本</span>
+                                <span class="result-value">¥280,000+</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="case-card">
+                    <div class="case-header">
+                        <div class="case-header-content">
+                            <h3>🍞 烘焙原料批发配送</h3>
+                            <span class="industry-tag">烘焙甜品</span>
+                        </div>
+                    </div>
+                    <div class="case-body">
+                        <div class="case-problem">
+                            <h4><el-icon><AlertCircle /></el-icon> 使用前痛点</h4>
+                            <p>服务100+烘焙店，原料种类繁多，品牌要求各异，手动记录品牌信息耗时且易错。</p>
+                        </div>
+                        <div class="case-solution">
+                            <h4><el-icon><CheckCircle /></el-icon> AI IMBot解决方案</h4>
+                            <p>使用烘焙甜品行业模板，自动识别原料分类和品牌要求，支持效期管理提醒，自动生成周/月消耗分析报表。</p>
+                        </div>
+                        <div class="case-results">
+                            <h4><el-icon><TrendingUp /></el-icon> 使用效果</h4>
+                            <div class="result-item">
+                                <span class="result-label">品牌错发率</span>
+                                <span class="result-value">降至 0.5%以下</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">采购计划准确率</span>
+                                <span class="result-value">提升至 95%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">客户续约率</span>
+                                <span class="result-value">提升至 98%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="case-card">
+                    <div class="case-header">
+                        <div class="case-header-content">
+                            <h3>🏍️ 摩托车配件批发中心</h3>
+                            <span class="industry-tag">配件批发</span>
+                        </div>
+                    </div>
+                    <div class="case-body">
+                        <div class="case-problem">
+                            <h4><el-icon><AlertCircle /></el-icon> 使用前痛点</h4>
+                            <p>配件型号复杂，客户口语化下单，经常配错型号，退货率高，客户流失严重。</p>
+                        </div>
+                        <div class="case-solution">
+                            <h4><el-icon><CheckCircle /></el-icon> AI IMBot解决方案</h4>
+                            <p>使用配件批发行业模板，AI自动识别配件型号俗称、品牌代码，减少漏配和配错风险。</p>
+                        </div>
+                        <div class="case-results">
+                            <h4><el-icon><TrendingUp /></el-icon> 使用效果</h4>
+                            <div class="result-item">
+                                <span class="result-label">型号识别准确率</span>
+                                <span class="result-value">提升至 99%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">退货率</span>
+                                <span class="result-value">下降 65%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">客户满意度</span>
+                                <span class="result-value">提升 50%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats">
+            <h2 class="stats-title">AI IMBot 累计为客户创造的价值</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-desc">服务企业客户</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">90%+</div>
+                    <div class="stat-desc">平均效率提升</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">80%</div>
+                    <div class="stat-desc">平均成本降低</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">99.5%</div>
+                    <div class="stat-desc">订单准确率</div>
+                </div>
+            </div>
+        </section>
+
+        <div id="footer"></div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { AlertCircle, CheckCircle, TrendingUp } = ElementPlusIconsVue;
+
+        const app = createApp({
+            setup() {
+                const goToDownload = () => {
+                    window.location.href = 'index.html#download';
+                };
+
+                const goToIndustries = () => {
+                    window.location.href = 'industries.html';
+                };
+
+                return {
+                    goToDownload,
+                    goToIndustries
+                }
+            }
+        });
+        
+        app.use(ElementPlus);
+        app.component('AlertCircle', AlertCircle);
+        app.component('CheckCircle', CheckCircle);
+        app.component('TrendingUp', TrendingUp);
+        
+        app.mount('#app');
+    </script>
+    
+    <script src="./public/js/navbar.js"></script>
+    <script src="./public/js/footer.js"></script>
+</body>
+</html>

@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI IMBot - AI驱动的桌面机器人工具 | 智能订单自动化</title>
+    <meta name="description" content="AI IMBot 是一款基于大模型AI技术的智能桌面机器人工具。支持飞书、钉钉等多平台消息接入，AI智能解析订单，本地部署确保数据隐私，让IM消息自动转化为清晰报表。">
+    <meta name="keywords" content="AI机器人, 桌面机器人, IM消息处理, 订单自动化, 飞书机器人, 钉钉机器人, AI解析, 本地部署, 智能报表, IMBot">
+    <meta name="author" content="AI IMBot Team">
+    
+    <link rel="icon" type="image/x-icon" href="./public/favicon.ico">
+    <link rel="apple-touch-icon" href="./public/images/logo.png">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://imbot.ai/">
+    <meta property="og:title" content="AI IMBot - AI驱动的桌面机器人工具">
+    <meta property="og:description" content="基于大模型AI技术的智能桌面机器人工具，支持飞书、钉钉等多平台，数据完全私有，AI驱动智能解析。">
+    <meta property="og:image" content="/images/og-preview.png">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://imbot.ai/">
+    <meta property="twitter:title" content="AI IMBot - AI驱动的桌面机器人工具">
+    <meta property="twitter:description" content="基于大模型AI技术的智能桌面机器人工具，支持飞书、钉钉等多平台，数据完全私有。">
+    <meta property="twitter:image" content="/images/og-preview.png">
+
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link rel="stylesheet" href="./public/css/common.css">
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "AI IMBot",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Windows, Linux",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "CNY"
+      },
+      "featureList": "IM消息捕获, AI订单解析, 本地数据存储, 自动化报表生成, 飞书集成, 钉钉集成"
+    }
+    </script>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+    
+    <style>
+        html { scroll-behavior: smooth; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; line-height: 1.6; color: var(--text-primary); overflow-x: hidden; }
+
+        .hero {
+            background: var(--gradient-dark);
+            color: #fff;
+            padding: 160px 20px 120px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            animation: pulseBackground 8s ease-in-out infinite;
+        }
+        @keyframes pulseBackground {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .hero-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: floatUp 6s ease-in infinite;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+        .hero-content { position: relative; z-index: 1; }
+        .hero .logo { font-size: 48px; font-weight: 900; margin-bottom: 20px; }
+        .hero .logo span { background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero h1 { font-size: 52px; margin-bottom: 24px; font-weight: 800; line-height: 1.2; }
+        .hero h1 span { color: var(--primary-light); }
+        .hero p { font-size: 22px; opacity: 0.9; margin-bottom: 30px; max-width: 900px; margin-left: auto; margin-right: auto; color: #cbd5e1; }
+        .hero-tags { display: flex; gap: 16px; justify-content: center; margin-bottom: 50px; flex-wrap: wrap; }
+        .hero-tag { 
+            background: rgba(255,255,255,0.1); 
+            padding: 10px 24px; 
+            border-radius: 30px; 
+            font-size: 15px; 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+        .hero-tag:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .hero-buttons { display: flex; gap: 24px; justify-content: center; position: relative; z-index: 1; flex-wrap: wrap; }
+
+        .features { padding: 120px 20px; background: #f8fafc; }
+        .section-title { text-align: center; font-size: 40px; margin-bottom: 20px; color: var(--text-primary); font-weight: 800; }
+        .section-subtitle { text-align: center; font-size: 18px; color: var(--text-muted); margin-bottom: 80px; max-width: 700px; margin-left: auto; margin-right: auto; }
+        .feature-grid { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+        .feature-card { 
+            background: var(--bg-card); 
+            padding: 45px 35px; 
+            border-radius: 24px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
+            transition: all 0.4s ease; 
+            border: 1px solid var(--border-color); 
+            position: relative; 
+            overflow: hidden; 
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+        .feature-card:hover { 
+            transform: translateY(-12px); 
+            box-shadow: 0 25px 50px rgba(99, 102, 241, 0.15); 
+            border-color: var(--primary-color); 
+        }
+        .feature-card:hover::before { transform: scaleX(1); }
+        .feature-icon { 
+            width: 70px; 
+            height: 70px; 
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); 
+            color: var(--primary-color); 
+            border-radius: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 32px; 
+            margin-bottom: 28px; 
+            transition: all 0.3s;
+        }
+        .feature-card:hover .feature-icon { 
+            background: var(--gradient-primary); 
+            color: #fff; 
+            transform: scale(1.1);
+        }
+        .feature-card h3 { font-size: 22px; margin-bottom: 16px; color: var(--text-primary); font-weight: 700; }
+        .feature-card p { color: var(--text-muted); line-height: 1.8; font-size: 15px; }
+
+        .platforms { padding: 120px 20px; background: var(--bg-dark); color: #fff; }
+        .platforms-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+        .platform-card { 
+            background: rgba(255,255,255,0.05); 
+            padding: 40px; 
+            border-radius: 20px; 
+            text-align: center; 
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+        }
+        .platform-card:hover { 
+            background: rgba(255,255,255,0.1); 
+            transform: translateY(-8px);
+            border-color: var(--primary-color);
+        }
+        .platform-icon { font-size: 56px; margin-bottom: 20px; }
+        .platform-card h3 { font-size: 24px; margin-bottom: 12px; color: #fff; }
+        .platform-card p { color: #94a3b8; font-size: 15px; line-height: 1.7; }
+        .platform-features { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .platform-feature { display: flex; align-items: center; justify-content: center; gap: 10px; color: #cbd5e1; font-size: 14px; }
+        .platform-feature svg { color: var(--accent-color); }
+
+        .demo-section { padding: 120px 20px; background: #fff; }
+        .demo-container { max-width: 1000px; margin: 0 auto; background: var(--bg-dark); border-radius: 28px; box-shadow: 0 25px 80px rgba(0,0,0,0.15); overflow: hidden; }
+        .demo-header { padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .demo-header span { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; }
+        .demo-header span svg { color: var(--accent-color); }
+        .live-badge { background: rgba(16, 185, 129, 0.2); color: var(--accent-color); padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .demo-body { padding: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .demo-input textarea { 
+            width: 100%; 
+            height: 180px; 
+            padding: 20px; 
+            border: 2px solid rgba(255,255,255,0.1); 
+            border-radius: 16px; 
+            font-size: 15px; 
+            resize: none; 
+            transition: all 0.3s; 
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-family: inherit;
+        }
+        .demo-input textarea:focus { border-color: var(--primary-color); outline: none; background: rgba(255,255,255,0.08); }
+        .demo-input textarea::placeholder { color: #64748b; }
+        .demo-result { background: rgba(255,255,255,0.03); padding: 25px; border-radius: 16px; border: 1px dashed rgba(255,255,255,0.1); min-height: 180px; }
+        .result-item { 
+            background: rgba(16, 185, 129, 0.1); 
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 15px; 
+            margin-bottom: 12px; 
+            border-radius: 12px; 
+            animation: slideIn 0.4s ease;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
+        .result-item strong { color: #fff; }
+        .result-item .quantity { color: var(--primary-light); margin: 0 10px; }
+        .result-item .tag { float: right; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 8px; font-size: 12px; }
+        .demo-actions { margin-top: 20px; display: flex; gap: 12px; }
+
+        .stats-section { padding: 100px 20px; background: var(--gradient-primary); color: #fff; }
+        .stats-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px; }
+        .stat-item { text-align: center; padding: 30px; }
+        .stat-number { font-size: 56px; font-weight: 900; margin-bottom: 10px; }
+        .stat-desc { font-size: 16px; opacity: 0.9; }
+
+        .pricing { padding: 120px 20px; background: #f8fafc; }
+        .pricing-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 30px; }
+        .pricing-card { 
+            background: var(--bg-card); 
+            padding: 50px 40px; 
+            border-radius: 24px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
+            border: 1px solid var(--border-color);
+            position: relative;
+            transition: all 0.3s;
+        }
+        .pricing-card:hover { transform: translateY(-8px); box-shadow: 0 15px 40px rgba(99, 102, 241, 0.1); }
+        .pricing-card.featured { 
+            border-color: var(--primary-color); 
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.2);
+            transform: scale(1.02);
+        }
+        .pricing-card.featured::before {
+            content: '最受欢迎';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gradient-primary);
+            color: #fff;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .pricing-card h3 { font-size: 24px; margin-bottom: 8px; color: var(--text-primary); }
+        .pricing-card .desc { font-size: 14px; color: var(--text-muted); margin-bottom: 30px; }
+        .pricing-card .price { font-size: 48px; font-weight: 900; color: var(--primary-color); }
+        .pricing-card .price span { font-size: 20px; font-weight: 400; color: var(--text-muted); }
+        .pricing-features { margin-top: 30px; display: flex; flex-direction: column; gap: 15px; }
+        .pricing-feature { display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-size: 15px; }
+        .pricing-feature svg { color: var(--accent-color); }
+
+        .download { padding: 120px 20px; background: var(--bg-dark); color: #fff; text-align: center; }
+        .download h2 { font-size: 40px; margin-bottom: 20px; }
+        .download p { font-size: 18px; opacity: 0.8; margin-bottom: 50px; max-width: 700px; margin-left: auto; margin-right: auto; }
+        .download-options { display: flex; gap: 24px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
+        .download-card { 
+            background: rgba(255,255,255,0.05); 
+            padding: 40px; 
+            border-radius: 20px; 
+            min-width: 280px; 
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+        }
+        .download-card:hover { background: rgba(255,255,255,0.1); transform: translateY(-8px); }
+        .download-card h3 { font-size: 20px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .download-card .version { color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
+
+        .footer { background: #020617; color: #94a3b8; padding: 80px 20px 40px; }
+        .footer-content { max-width: 1200px; margin: 0 auto; }
+        .footer-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 50px; margin-bottom: 60px; }
+        .footer-brand h3 { font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 20px; }
+        .footer-brand h3 span { background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .footer-brand p { font-size: 14px; line-height: 1.8; color: #64748b; }
+        .footer-links h4 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 20px; }
+        .footer-links ul { list-style: none; }
+        .footer-links li { margin-bottom: 12px; }
+        .footer-links a { color: #94a3b8; text-decoration: none; transition: color 0.3s; }
+        .footer-links a:hover { color: var(--primary-light); }
+        .footer-bottom { padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .footer-bottom p { font-size: 14px; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 34px; }
+            .hero p { font-size: 18px; }
+            .hero-buttons { flex-direction: column; align-items: center; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .platforms-grid { grid-template-columns: 1fr; }
+            .demo-body { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+            .stat-number { font-size: 36px; }
+            .pricing-grid { grid-template-columns: 1fr; }
+            .download-options { flex-direction: column; align-items: center; }
+            .footer-top { grid-template-columns: 1fr; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="navbar" data-page="index"></div>
+
+        <section class="hero">
+            <div class="hero-particles">
+                <div v-for="i in 20" :key="i" class="particle" :style="{ left: Math.random() * 100 + '%', animationDelay: Math.random() * 6 + 's', animationDuration: (4 + Math.random() * 4) + 's' }"></div>
+            </div>
+            <div class="hero-content">
+                <div class="logo">AI <span>IMBot</span></div>
+                <h1>AI驱动的<span>桌面机器人</span>工具</h1>
+                <p>智能解析IM消息，自动生成订单报表，支持飞书、钉钉等多平台接入，数据完全私有部署</p>
+                <div class="hero-tags">
+                    <span class="hero-tag">🤖 AI智能解析</span>
+                    <span class="hero-tag">🔒 数据完全私有</span>
+                    <span class="hero-tag">💬 多平台IM支持</span>
+                    <span class="hero-tag">📊 自动化报表</span>
+                    <span class="hero-tag">⚡ 本地离线运行</span>
+                </div>
+                <div class="hero-buttons">
+                    <el-button size="large" type="primary" @click="scrollToDownload" style="font-weight: bold; padding: 18px 48px; font-size: 18px; border-radius: 50px; background: var(--gradient-primary); border: none; box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);">
+                        <el-icon><Download /></el-icon> 立即免费试用
+                    </el-button>
+                    <el-button size="large" plain @click="scrollToDemo" style="background: transparent; border-color: rgba(255,255,255,0.3); color: #fff; padding: 18px 48px; font-size: 18px; border-radius: 50px;">
+                        <el-icon><Play /></el-icon> 观看演示
+                    </el-button>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="features">
+            <h2 class="section-title">核心能力</h2>
+            <p class="section-subtitle">AI IMBot 以本地化部署为核心，结合大模型AI、智能解析、规则引擎与自动报表，打造企业级IM自动化解决方案</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <h3>多平台IM消息捕获</h3>
+                    <p>支持飞书、钉钉等主流IM平台的消息接入，实时捕获群组消息。无需转发，无需额外账号，彻底解决人工录入遗漏问题。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>AI驱动智能解析</h3>
+                    <p>AI智能解析自然语言订单，精准识别"来10斤土豆"、"TD5"等口语化表达和快捷码。支持批量语法，复杂订单一键拆解。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>企业级数据隐私</h3>
+                    <p>软件在您的本地电脑运行，所有订单、客户、财务数据均存储在本地，绝不上传云端，确保商业机密安全。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>全自动多维度报表</h3>
+                    <p>定时生成Excel多Sheet报表，自动按线路、销售员、商品分类汇总。支持邮件自动推送，让管理者每天掌握业务数据。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>智能交互机器人</h3>
+                    <p>可视化配置自动回复规则。客户发送"查订单"即可自助获取进度，发送"查报表"自动接收统计图，大幅提升服务效率。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <h3>灵活的规则引擎</h3>
+                    <p>支持解析规则与统计规则的动态配置。提供CSV/TXT/MD多格式导入导出，支持云端备份恢复，换机无忧。</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="platforms">
+            <h2 class="section-title">支持的平台</h2>
+            <p class="section-subtitle">全面支持主流企业IM平台，为未来商用IM平台扩展预留接口</p>
+            <div class="platforms-grid">
+                <div class="platform-card">
+                    <div class="platform-icon">📧</div>
+                    <h3>飞书集成</h3>
+                    <p>通过飞书开放平台API实现消息监听和发送，支持飞书群聊和私聊消息接收，支持消息卡片、@消息等交互。</p>
+                    <div class="platform-features">
+                        <div class="platform-feature"><el-icon><Check /></el-icon> 消息监听</div>
+                        <div class="platform-feature"><el-icon><Check /></el-icon> 消息卡片</div>
+                        <div class="platform-feature"><el-icon><Check /></el-icon> 用户信息获取</div>
+                    </div>
+                </div>
+                <div class="platform-card">
+                    <div class="platform-icon">💼</div>
+                    <h3>钉钉集成</h3>
+                    <p>通过钉钉开放平台API接入，支持钉钉机器人消息接收和发送，支持群聊和私聊，支持消息卡片和@交互。</p>
+                    <div class="platform-features">
+                        <div class="platform-feature"><el-icon><Check /></el-icon> 机器人消息</div>
+                        <div class="platform-feature"><el-icon><Check /></el-icon> 消息卡片</div>
+                        <div class="platform-feature"><el-icon><Check /></el-icon> 群管理</div>
+                    </div>
+                </div>
+                <div class="platform-card">
+                    <div class="platform-icon">🔮</div>
+                    <h3>通用IM接口</h3>
+                    <p>预留通用IM接入接口，支持自定义IM平台扩展。为未来开发自有商用IM平台做好技术准备。</p>
+                    <div class="platform-features">
+                        <div class="platform-feature"><el-icon><Check /></el-icon> 插件化设计</div>
+                        <div class="platform-feature"><el-icon><Check /></el-icon> 标准API</div>
+                        <div class="platform-feature"><el-icon><Check /></el-icon> 自定义扩展</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="demo-section" class="demo-section">
+            <h2 class="section-title">亲眼见证 AI 解析能力</h2>
+            <p class="section-subtitle">输入模拟的IM消息，体验AI智能解析的强大能力</p>
+            <div class="demo-container">
+                <div class="demo-header">
+                    <span><el-icon><Cpu /></el-icon> AI实时解析模拟器</span>
+                    <span class="live-badge">Live Demo</span>
+                </div>
+                <div class="demo-body">
+                    <div class="demo-input">
+                        <p style="margin-bottom: 15px; color: #94a3b8;">在下方输入模拟的IM消息：</p>
+                        <textarea v-model="demoText" placeholder="例如：来10斤土豆，再要5个西瓜，TD3"></textarea>
+                        <div class="demo-actions">
+                            <el-button type="primary" @click="runDemo" :loading="isParsing" style="border-radius: 12px;">开始解析</el-button>
+                            <el-button @click="fillExample" style="border-radius: 12px; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;">填入示例</el-button>
+                        </div>
+                    </div>
+                    <div class="demo-result">
+                        <p style="margin-bottom: 15px; color: #94a3b8;">解析结果预览：</p>
+                        <div v-if="parsedResults.length > 0">
+                            <div v-for="(item, index) in parsedResults" :key="index" class="result-item">
+                                <strong>{{ item.product }}</strong> 
+                                <span class="quantity">x {{ item.quantity }} {{ item.unit }}</span>
+                                <span class="tag">{{ item.source }}</span>
+                            </div>
+                        </div>
+                        <div v-else style="text-align: center; color: #64748b; padding-top: 40px;">
+                            <el-icon :size="48"><MessageSquare /></el-icon>
+                            <p style="margin-top: 15px;">等待输入...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">10k+</div>
+                    <div class="stat-desc">日均处理订单数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">99.8%</div>
+                    <div class="stat-desc">智能解析准确率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-desc">活跃IM群组</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-desc">全天候自动化运行</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="pricing">
+            <h2 class="section-title">定价方案</h2>
+            <p class="section-subtitle">灵活的授权方案，满足不同规模企业的需求</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>基础版</h3>
+                    <p class="desc">适合小型企业和个人使用</p>
+                    <div class="price">¥0<span>/月</span></div>
+                    <div class="pricing-features">
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 单IM平台接入</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> AI订单解析</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 基础报表生成</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 本地数据存储</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 社区支持</div>
+                    </div>
+                    <el-button size="large" style="width: 100%; margin-top: 30px; border-radius: 12px;" @click="selectPlan('basic')">免费开始</el-button>
+                </div>
+                <div class="pricing-card featured">
+                    <h3>专业版</h3>
+                    <p class="desc">适合中型企业和团队使用</p>
+                    <div class="price">¥299<span>/月</span></div>
+                    <div class="pricing-features">
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 多IM平台接入</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 高级AI解析</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 高级报表分析</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 智能回复机器人</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 优先技术支持</div>
+                    </div>
+                    <el-button size="large" type="primary" style="width: 100%; margin-top: 30px; border-radius: 12px;" @click="selectPlan('pro')">升级专业版</el-button>
+                </div>
+                <div class="pricing-card">
+                    <h3>企业版</h3>
+                    <p class="desc">适合大型企业和定制需求</p>
+                    <div class="price">¥999<span>/月起</span></div>
+                    <div class="pricing-features">
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 全部功能</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 私有化部署</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 自定义开发</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> 专属客服</div>
+                        <div class="pricing-feature"><el-icon><Check /></el-icon> SLA保障</div>
+                    </div>
+                    <el-button size="large" type="success" style="width: 100%; margin-top: 30px; border-radius: 12px;" @click="contactSales">联系销售</el-button>
+                </div>
+            </div>
+        </section>
+
+        <section id="download" class="download">
+            <h2>立即下载 AI IMBot</h2>
+            <p>选择适合您系统的版本，开始体验AI智能订单自动化</p>
+            <div class="download-options">
+                <div class="download-card">
+                    <h3><el-icon><Monitor /></el-icon> Windows 版</h3>
+                    <div class="version">v2.0.0 | Windows 10+</div>
+                    <el-button type="primary" @click="downloadWindows" style="border-radius: 12px;">下载安装包</el-button>
+                    <p style="margin-top: 15px; font-size: 13px;">含启动脚本和依赖包</p>
+                </div>
+                <div class="download-card">
+                    <h3><el-icon><Server /></el-icon> Linux 版</h3>
+                    <div class="version">v2.0.0 | Python 3.8+</div>
+                    <el-button type="success" @click="downloadLinux" style="border-radius: 12px;">下载源码</el-button>
+                    <p style="margin-top: 15px; font-size: 13px;">需自行安装依赖</p>
+                </div>
+                <div class="download-card">
+                    <h3><el-icon><Container /></el-icon> Docker 版</h3>
+                    <div class="version">latest | 一键部署</div>
+                    <el-button type="info" @click="copyDockerCommand" style="border-radius: 12px;">复制命令</el-button>
+                    <p style="margin-top: 15px; font-size: 13px;">docker-compose up</p>
+                </div>
+            </div>
+        </section>
+
+        <div id="footer"></div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive } = Vue;
+        const { ElMessage } = ElementPlus;
+        const { Download, Play, Check, Cpu, MessageSquare, Monitor, Server, Container } = ElementPlusIconsVue;
+
+        const API_BASE = window.location.origin || 'http://localhost:5000';
+
+        const app = createApp({
+            setup() {
+                const demoText = ref('');
+                const isParsing = ref(false);
+                const parsedResults = ref([]);
+
+                const scrollToDownload = () => {
+                    document.getElementById('download').scrollIntoView({ behavior: 'smooth' });
+                };
+
+                const scrollToDemo = () => {
+                    document.getElementById('demo-section').scrollIntoView({ behavior: 'smooth' });
+                };
+
+                const fillExample = () => {
+                    demoText.value = '来10斤土豆，再要5个西瓜，TD3套餐一份，可乐2箱';
+                };
+
+                const runDemo = async () => {
+                    if (!demoText.value.trim()) {
+                        ElMessage.warning('请输入模拟消息');
+                        return;
+                    }
+                    isParsing.value = true;
+                    parsedResults.value = [];
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    parsedResults.value = [
+                        { product: '土豆', quantity: '10', unit: '斤', source: 'AI解析' },
+                        { product: '西瓜', quantity: '5', unit: '个', source: 'AI解析' },
+                        { product: 'TD3套餐', quantity: '1', unit: '份', source: '快捷码' },
+                        { product: '可乐', quantity: '2', unit: '箱', source: 'AI解析' }
+                    ];
+                    isParsing.value = false;
+                    ElMessage.success('解析完成');
+                };
+
+                const downloadWindows = () => {
+                    ElMessage.info('正在准备Windows安装包下载...');
+                };
+
+                const downloadLinux = () => {
+                    ElMessage.info('正在准备Linux源码下载...');
+                };
+
+                const copyDockerCommand = async () => {
+                    await navigator.clipboard.writeText('docker-compose up -d');
+                    ElMessage.success('Docker命令已复制到剪贴板');
+                };
+
+                const selectPlan = (plan) => {
+                    ElMessage.success(`已选择${plan === 'basic' ? '基础版' : '专业版'}，正在跳转注册页面...`);
+                };
+
+                const contactSales = () => {
+                    ElMessage.info('正在打开联系销售页面...');
+                };
+
+                return {
+                    demoText,
+                    isParsing,
+                    parsedResults,
+                    scrollToDownload,
+                    scrollToDemo,
+                    fillExample,
+                    runDemo,
+                    downloadWindows,
+                    downloadLinux,
+                    copyDockerCommand,
+                    selectPlan,
+                    contactSales
+                };
+            }
+        });
+
+        app.use(ElementPlus);
+        app.component('Download', Download);
+        app.component('Play', Play);
+        app.component('Check', Check);
+        app.component('Cpu', Cpu);
+        app.component('MessageSquare', MessageSquare);
+        app.component('Monitor', Monitor);
+        app.component('Server', Server);
+        app.component('Container', Container);
+        app.mount('#app');
+    </script>
+
+    <script src="./public/js/navbar.js"></script>
+    <script src="./public/js/footer.js"></script>
+</body>
+</html>

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>控制台 - AI IMBot | AI驱动的桌面机器人工具</title>
+    <link rel="icon" type="image/x-icon" href="./public/favicon.ico">
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link rel="stylesheet" href="./public/css/common.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f8fafc; min-height: 100vh; }
+        
+        .settings-container { display: flex; max-width: 1400px; margin: 0 auto; min-height: 100vh; padding-top: 72px; }
+        
+        .sidebar { width: 280px; background: #fff; border-right: 1px solid #e2e8f0; padding: 30px 0; flex-shrink: 0; height: calc(100vh - 72px); overflow-y: auto; }
+        .sidebar-header { padding: 0 30px 30px; border-bottom: 1px solid #e2e8f0; }
+        .sidebar-header h1 { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+        .sidebar-header p { font-size: 13px; color: var(--text-muted); margin-top: 5px; }
+        
+        .menu-items { padding: 20px 0; }
+        .menu-item { display: flex; align-items: center; gap: 14px; padding: 14px 30px; cursor: pointer; transition: all 0.3s; color: var(--text-muted); }
+        .menu-item:hover { background: #f8fafc; color: #475569; }
+        .menu-item.active { background: rgba(99, 102, 241, 0.08); color: var(--primary-color); border-left: 3px solid var(--primary-color); }
+        .menu-item .icon { font-size: 20px; }
+        .menu-item .text { font-size: 15px; font-weight: 500; }
+        
+        .content { flex: 1; padding: 40px; overflow-y: auto; }
+        .content-header { margin-bottom: 30px; }
+        .content-header h2 { font-size: 26px; font-weight: 700; color: var(--text-primary); }
+        .content-header p { font-size: 14px; color: var(--text-muted); margin-top: 8px; }
+        
+        .setting-card { background: #fff; border-radius: 16px; padding: 35px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+        .card-title { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid #f1f5f9; }
+        
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 15px; transition: all 0.3s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        
+        .plugin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+        .plugin-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; transition: all 0.3s; }
+        .plugin-card:hover { box-shadow: 0 12px 35px rgba(99, 102, 241, 0.08); border-color: var(--primary-color); }
+        .plugin-card.installed { border-color: var(--accent-color); }
+        
+        .plugin-header { padding: 24px; background: #f8fafc; }
+        .plugin-icon-row { display: flex; align-items: center; gap: 16px; }
+        .plugin-icon { width: 56px; height: 56px; background: rgba(99, 102, 241, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .plugin-info h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+        .plugin-info p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+        
+        .plugin-body { padding: 24px; }
+        .plugin-body p { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 18px; }
+        
+        .plugin-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+        .plugin-tag { font-size: 12px; padding: 5px 12px; background: #f1f5f9; color: #64748b; border-radius: 16px; }
+        
+        .plugin-footer { padding: 18px 24px; background: #f8fafc; display: flex; align-items: center; justify-content: space-between; }
+        .plugin-version { font-size: 12px; color: #94a3b8; }
+        .plugin-action { display: flex; gap: 12px; }
+        
+        .industry-info { background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%); border-radius: 16px; padding: 28px; display: flex; align-items: center; gap: 24px; }
+        .industry-icon-big { width: 70px; height: 70px; background: #fff; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 36px; }
+        .industry-details h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+        .industry-details p { font-size: 14px; color: var(--text-muted); margin-top: 6px; }
+        
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .stat-item { background: #fff; padding: 24px; border-radius: 14px; text-align: center; }
+        .stat-number { font-size: 32px; font-weight: 800; color: var(--primary-color); }
+        .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 10px; }
+        
+        .btn-primary { padding: 12px 24px; background: var(--primary-color); color: #fff; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; transition: all 0.3s; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-secondary { padding: 12px 24px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; transition: all 0.3s; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        
+        @media (max-width: 768px) {
+            .settings-container { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; }
+            .content { padding: 20px; }
+            .plugin-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="settings-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>AI IMBot</h1>
+                <p>管理您的应用配置</p>
+            </div>
+            
+            <div class="menu-items">
+                <div class="menu-item" :class="{ active: activeTab === 'profile' }" @click="activeTab = 'profile'">
+                    <span class="icon">👤</span>
+                    <span class="text">个人资料</span>
+                </div>
+                <div class="menu-item" :class="{ active: activeTab === 'industry' }" @click="activeTab = 'industry'">
+                    <span class="icon">🏢</span>
+                    <span class="text">行业配置</span>
+                </div>
+                <div class="menu-item" :class="{ active: activeTab === 'plugins' }" @click="activeTab = 'plugins'">
+                    <span class="icon">🧩</span>
+                    <span class="text">IM平台插件</span>
+                </div>
+                <div class="menu-item" :class="{ active: activeTab === 'notifications' }" @click="activeTab = 'notifications'">
+                    <span class="icon">🔔</span>
+                    <span class="text">通知设置</span>
+                </div>
+                <div class="menu-item" :class="{ active: activeTab === 'about' }" @click="activeTab = 'about'">
+                    <span class="icon">ℹ️</span>
+                    <span class="text">关于</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div v-if="activeTab === 'profile'" class="content-header">
+                <h2>个人资料</h2>
+                <p>管理您的账户信息</p>
+            </div>
+            <div v-if="activeTab === 'profile'">
+                <div class="setting-card">
+                    <div class="card-title">基本信息</div>
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input v-model="profile.username" placeholder="请输入用户名">
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input v-model="profile.email" type="email" placeholder="请输入邮箱">
+                    </div>
+                    <div class="form-group">
+                        <label>手机号</label>
+                        <input v-model="profile.phone" placeholder="请输入手机号">
+                    </div>
+                    <div class="form-group">
+                        <label>企业名称</label>
+                        <input v-model="profile.company_name" placeholder="请输入企业名称">
+                    </div>
+                    <button class="btn-primary" @click="saveProfile">保存更改</button>
+                </div>
+                
+                <div class="setting-card">
+                    <div class="card-title">密码安全</div>
+                    <div class="form-group">
+                        <label>当前密码</label>
+                        <input v-model="passwordForm.current" type="password" placeholder="请输入当前密码">
+                    </div>
+                    <div class="form-group">
+                        <label>新密码</label>
+                        <input v-model="passwordForm.new" type="password" placeholder="请输入新密码">
+                    </div>
+                    <div class="form-group">
+                        <label>确认新密码</label>
+                        <input v-model="passwordForm.confirm" type="password" placeholder="请确认新密码">
+                    </div>
+                    <button class="btn-primary" @click="changePassword">修改密码</button>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'industry'" class="content-header">
+                <h2>行业配置</h2>
+                <p>查看和管理您的行业设置</p>
+            </div>
+            <div v-if="activeTab === 'industry'">
+                <div class="industry-info">
+                    <div class="industry-icon-big">{{ currentIndustry.icon }}</div>
+                    <div class="industry-details">
+                        <h3>{{ currentIndustry.label }}</h3>
+                        <p>{{ currentIndustry.description }}</p>
+                    </div>
+                    <el-button type="primary" @click="showChangeIndustry = true">切换行业</el-button>
+                </div>
+                
+                <div class="stats-row" style="margin-top: 24px;">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ industryStats.totalOrders }}</div>
+                        <div class="stat-label">累计订单</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ industryStats.totalCustomers }}</div>
+                        <div class="stat-label">客户数量</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">¥{{ industryStats.totalRevenue }}</div>
+                        <div class="stat-label">累计营收</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ industryStats.activePlugins }}</div>
+                        <div class="stat-label">已安装插件</div>
+                    </div>
+                </div>
+                
+                <div class="setting-card" style="margin-top: 24px;">
+                    <div class="card-title">行业专属功能</div>
+                    <div style="display: grid; gap: 16px;">
+                        <div v-for="feature in currentIndustry.features" :key="feature.name" style="padding: 18px; background: #f8fafc; border-radius: 12px;">
+                            <div style="font-weight: 600; color: var(--text-primary);">{{ feature.name }}</div>
+                            <div style="font-size: 14px; color: var(--text-muted); margin-top: 5px;">{{ feature.description }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'plugins'" class="content-header">
+                <h2>IM平台插件</h2>
+                <p>安装、更新和管理您的IM平台接入插件</p>
+            </div>
+            <div v-if="activeTab === 'plugins'">
+                <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                    <el-input placeholder="搜索插件" v-model="searchKeyword" style="width: 280px;">
+                        <template #prefix><el-icon><Search /></el-icon></template>
+                    </el-input>
+                    <el-select v-model="filterCategory" placeholder="分类">
+                        <el-option label="全部" value=""></el-option>
+                        <el-option label="IM平台" value="platform"></el-option>
+                        <el-option label="工具插件" value="utility"></el-option>
+                        <el-option label="核心插件" value="core"></el-option>
+                    </el-select>
+                </div>
+                
+                <div class="plugin-grid">
+                    <div v-for="plugin in filteredPlugins" :key="plugin.id" class="plugin-card" :class="{ installed: plugin.installed }">
+                        <div class="plugin-header">
+                            <div class="plugin-icon-row">
+                                <div class="plugin-icon">{{ plugin.icon }}</div>
+                                <div class="plugin-info">
+                                    <h3>{{ plugin.name }}</h3>
+                                    <p>{{ plugin.category }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="plugin-body">
+                            <p>{{ plugin.description }}</p>
+                            <div class="plugin-tags">
+                                <span v-for="tag in plugin.tags" :key="tag" class="plugin-tag">{{ tag }}</span>
+                            </div>
+                        </div>
+                        <div class="plugin-footer">
+                            <div class="plugin-version">v{{ plugin.version }}</div>
+                            <div class="plugin-action">
+                                <button v-if="plugin.installed" class="btn-secondary" @click="uninstallPlugin(plugin)">卸载</button>
+                                <button v-else class="btn-primary" @click="installPlugin(plugin)">安装</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="filteredPlugins.length === 0" style="text-align: center; padding: 60px; color: #94a3b8;">
+                    <el-icon :size="48">Package</el-icon>
+                    <p style="margin-top: 15px;">没有找到匹配的插件</p>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'notifications'" class="content-header">
+                <h2>通知设置</h2>
+                <p>管理您的消息通知偏好</p>
+            </div>
+            <div v-if="activeTab === 'notifications'">
+                <div class="setting-card">
+                    <div class="card-title">消息通知</div>
+                    <div style="display: grid; gap: 16px;">
+                        <div v-for="notification in notifications" :key="notification.id" style="display: flex; align-items: center; justify-content: space-between; padding: 18px; background: #f8fafc; border-radius: 12px;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary);">{{ notification.name }}</div>
+                                <div style="font-size: 14px; color: var(--text-muted); margin-top: 5px;">{{ notification.description }}</div>
+                            </div>
+                            <el-switch v-model="notification.enabled"></el-switch>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="setting-card">
+                    <div class="card-title">自动提醒</div>
+                    <div class="form-group">
+                        <label>截单时间提醒</label>
+                        <input type="time" v-model="reminderSettings.cutoffTime" placeholder="选择时间">
+                        <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;">超过此时间未下单的客户将收到提醒</p>
+                    </div>
+                    <div class="form-group">
+                        <label>日报发送时间</label>
+                        <input type="time" v-model="reminderSettings.dailyReportTime" placeholder="选择时间">
+                        <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;">每天此时自动发送业务日报</p>
+                    </div>
+                    <button class="btn-primary" @click="saveNotifications">保存设置</button>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'about'" class="content-header">
+                <h2>关于 AI IMBot</h2>
+                <p>了解更多关于本应用的信息</p>
+            </div>
+            <div v-if="activeTab === 'about'">
+                <div class="setting-card">
+                    <div class="card-title">版本信息</div>
+                    <div style="display: grid; gap: 16px;">
+                        <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                            <span style="color: var(--text-muted);">应用版本</span>
+                            <span style="font-weight: 600;">v2.0.0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                            <span style="color: var(--text-muted);">构建时间</span>
+                            <span style="font-weight: 600;">2026-06-14</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                            <span style="color: var(--text-muted);">数据库版本</span>
+                            <span style="font-weight: 600;">SQLite 3.35+</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 12px 0;">
+                            <span style="color: var(--text-muted);">授权状态</span>
+                            <span style="font-weight: 600; color: var(--accent-color);">已激活</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="setting-card">
+                    <div class="card-title">系统状态</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+                        <div style="text-align: center; padding: 24px; background: #f8fafc; border-radius: 12px;">
+                            <div style="font-size: 28px; font-weight: 800; color: var(--accent-color);">✓</div>
+                            <div style="font-size: 13px; color: var(--text-muted); margin-top: 10px;">服务正常</div>
+                        </div>
+                        <div style="text-align: center; padding: 24px; background: #f8fafc; border-radius: 12px;">
+                            <div style="font-size: 28px; font-weight: 800; color: var(--accent-color);">✓</div>
+                            <div style="font-size: 13px; color: var(--text-muted); margin-top: 10px;">数据库连接</div>
+                        </div>
+                        <div style="text-align: center; padding: 24px; background: #f8fafc; border-radius: 12px;">
+                            <div style="font-size: 28px; font-weight: 800; color: var(--accent-color);">✓</div>
+                            <div style="font-size: 13px; color: var(--text-muted); margin-top: 10px;">IM平台连接</div>
+                        </div>
+                        <div style="text-align: center; padding: 24px; background: #f8fafc; border-radius: 12px;">
+                            <div style="font-size: 28px; font-weight: 800; color: #f59e0b;">⚠</div>
+                            <div style="font-size: 13px; color: var(--text-muted); margin-top: 10px;">更新可用</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <el-dialog v-model="showChangeIndustry" title="切换行业" width="500px">
+            <div style="display: grid; gap: 16px;">
+                <div v-for="industry in allIndustries" :key="industry.value" 
+                    style="padding: 24px; border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer;"
+                    :class="{ 'border-primary bg-primary/5': selectedIndustryForChange === industry.value }"
+                    @click="selectedIndustryForChange = industry.value">
+                    <div style="display: flex; align-items: center; gap: 18px;">
+                        <div style="font-size: 36px;">{{ industry.icon }}</div>
+                        <div>
+                            <div style="font-weight: 700; color: var(--text-primary);">{{ industry.label }}</div>
+                            <div style="font-size: 14px; color: var(--text-muted); margin-top: 5px;">{{ industry.description }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <template #footer>
+                <el-button @click="showChangeIndustry = false">取消</el-button>
+                <el-button type="primary" @click="confirmChangeIndustry">确认切换</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, computed, onMounted } = Vue;
+        const { ElMessage, ElSwitch, ElInput, ElSelect, ElOption, ElDialog, ElButton } = ElementPlus;
+        const { Search, Package } = ElementPlusIconsVue;
+
+        const API_BASE = '/api';
+
+        const allIndustries = [
+            { label: '海鲜批发', value: 'seafood', icon: '🦐', description: '客户订单管理、急单处理、截单提醒' },
+            { label: '餐饮配送', value: 'fooddelivery', icon: '🍽️', description: '商品管理、订单处理、促销活动' },
+            { label: '教育培训', value: 'education', icon: '📚', description: '课程管理、学员管理、学习进度' },
+            { label: '房产中介', value: 'realestate', icon: '🏠', description: '房源管理、客户管理、智能匹配' },
+            { label: '旅行社', value: 'travel', icon: '✈️', description: '线路管理、群配置、报名处理' },
+            { label: '工地管理', value: 'construction', icon: '🏗️', description: '工人打卡、工期管理、安全检查' },
+        ];
+
+        const industryFeatures = {
+            seafood: [
+                { name: '客户订单管理', description: '支持餐厅、食堂和散客的订单管理，通过IM进行订单交互' },
+                { name: '急单处理机制', description: '急单自动转发给老板，安排紧急派送' },
+                { name: '截单时间提醒', description: '可自定义截单时间，自动提醒未下单客户' },
+                { name: '供应商管理', description: '客户与供应商分类管理，身份明确区分' },
+                { name: '业务报表', description: '订单统计、客户消费分析、库存状况报表' },
+            ],
+            fooddelivery: [
+                { name: '商品管理', description: '商品分类、定价、库存管理' },
+                { name: '订单处理', description: '各类订单统一管理' },
+                { name: '桌台管理', description: '桌台状态、占用、结算管理' },
+                { name: '促销活动', description: '折扣、满减、优惠券管理' },
+                { name: '销售报表', description: '日/周/月销售统计分析' },
+            ],
+            education: [
+                { name: '课程管理', description: '课程创建、排课、定价管理' },
+                { name: '学员管理', description: '学员信息、报名、考勤管理' },
+                { name: '学习进度', description: '学习记录、成绩、进度跟踪' },
+                { name: '教师管理', description: '教师信息、授课安排管理' },
+                { name: '数据分析', description: '课程报名、学习效果分析' },
+            ],
+            realestate: [
+                { name: '房源管理', description: '房源信息、图片、价格管理' },
+                { name: '客户管理', description: '客户信息、需求、跟进记录' },
+                { name: '智能匹配', description: '根据客户需求智能匹配房源' },
+                { name: '交易流程', description: '交易跟踪、合同管理' },
+                { name: '数据分析', description: '成交统计、客户分析' },
+            ],
+            travel: [
+                { name: '线路管理', description: '旅游线路、价格、时间管理' },
+                { name: '群配置', description: '旅游群自动回复规则配置' },
+                { name: '报名处理', description: '报名管理、促单跟进' },
+                { name: '日报统计', description: '群反馈、下单数统计日报' },
+                { name: '智能回复', description: '自动回复群友咨询' },
+            ],
+            construction: [
+                { name: '工人打卡', description: '工人考勤、请假管理' },
+                { name: '工期管理', description: '天气和工期关系管理' },
+                { name: '工作面记录', description: '工作区域、工作量记录' },
+                { name: '材料管理', description: '材料入库、出库管理' },
+                { name: '安全检查', description: '安全、质量检查记录' },
+            ],
+        };
+
+        const defaultPluginsData = [
+            { id: 'core', name: '核心功能插件', icon: '⚙️', description: '订单解析、消息捕获、规则引擎、报表生成', category: '核心插件', version: '2.0.0', installed: true, tags: ['核心', '必需'], type: 'core' },
+            { id: 'feishu', name: '飞书插件', icon: '📧', description: '飞书消息捕获、自动回复、群管理', category: 'IM平台', version: '2.0.0', installed: true, tags: ['飞书', '消息', '群管理'], type: 'platform' },
+            { id: 'dingtalk', name: '钉钉插件', icon: '💼', description: '钉钉消息捕获、自动回复、群管理', category: 'IM平台', version: '2.0.0', installed: false, tags: ['钉钉', '消息', '群管理'], type: 'platform' },
+            { id: 'excel', name: 'Excel报表插件', icon: '📊', description: '多格式报表导出、邮件自动发送', category: '工具插件', version: '2.0.0', installed: true, tags: ['报表', 'Excel', '邮件'], type: 'utility' },
+        ];
+
+        createApp({
+            setup() {
+                const activeTab = ref('profile');
+                const searchKeyword = ref('');
+                const filterCategory = ref('');
+                const showChangeIndustry = ref(false);
+                const selectedIndustryForChange = ref('');
+                const loading = ref(false);
+                
+                const profile = reactive({
+                    username: '',
+                    email: '',
+                    phone: '',
+                    company_name: '',
+                    industry: ''
+                });
+                
+                const passwordForm = reactive({
+                    current: '',
+                    new: '',
+                    confirm: ''
+                });
+                
+                const notifications = ref([
+                    { id: 1, name: '新订单通知', description: '收到新订单时发送通知', enabled: true },
+                    { id: 2, name: '急单通知', description: '收到急单时立即通知', enabled: true },
+                    { id: 3, name: '日报推送', description: '每天定时发送业务日报', enabled: true },
+                    { id: 4, name: '库存预警', description: '库存低于预警值时提醒', enabled: true },
+                    { id: 5, name: '截单提醒', description: '截单时间前提醒客户下单', enabled: true },
+                ]);
+                
+                const reminderSettings = reactive({
+                    cutoffTime: '21:00',
+                    dailyReportTime: '09:00'
+                });
+
+                const currentIndustryCode = ref('seafood');
+                const currentIndustry = computed(() => {
+                    const industry = allIndustries.find(i => i.value === currentIndustryCode.value);
+                    return {
+                        ...industry,
+                        features: industryFeatures[currentIndustryCode.value] || []
+                    };
+                });
+                
+                const industryStats = reactive({
+                    totalOrders: 12580,
+                    totalCustomers: 326,
+                    totalRevenue: 2856000,
+                    activePlugins: 0
+                });
+
+                const plugins = ref([]);
+                const installedPluginIds = ref(new Set());
+                
+                const filteredPlugins = computed(() => {
+                    return plugins.value.filter(plugin => {
+                        const matchKeyword = !searchKeyword.value || 
+                            plugin.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
+                            plugin.description.toLowerCase().includes(searchKeyword.value.toLowerCase());
+                        const matchCategory = !filterCategory.value || plugin.type === filterCategory.value;
+                        return matchKeyword && matchCategory;
+                    });
+                });
+
+                const apiFetch = async (url, options = {}) => {
+                    const token = localStorage.getItem('token');
+                    const headers = {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    };
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
+                    return fetch(`${API_BASE}${url}`, { ...options, headers });
+                };
+
+                const fetchProfile = async () => {
+                    try {
+                        const res = await apiFetch('/settings/profile');
+                        const result = await res.json();
+                        if (result.success) {
+                            profile.username = result.profile.username || '';
+                            profile.email = result.profile.email || '';
+                            profile.phone = result.profile.phone || '';
+                            profile.company_name = result.profile.company_name || '';
+                            profile.industry = result.profile.industry || '';
+                            currentIndustryCode.value = result.profile.industry || 'seafood';
+                        }
+                    } catch (e) {
+                        console.error('获取个人资料失败:', e);
+                    }
+                };
+
+                const fetchPlugins = async () => {
+                    try {
+                        const res = await apiFetch('/settings/plugins');
+                        const result = await res.json();
+                        if (result.success) {
+                            installedPluginIds.value = new Set(
+                                result.installed_plugins.map(p => p.id)
+                            );
+                            
+                            const allPlugins = [...result.installed_plugins, ...result.recommended_plugins];
+                            const seen = new Set();
+                            plugins.value = allPlugins.filter(p => {
+                                if (seen.has(p.id)) return false;
+                                seen.add(p.id);
+                                return true;
+                            }).map(p => ({
+                                ...p,
+                                installed: installedPluginIds.value.has(p.id),
+                                icon: getPluginIcon(p.industry || p.category),
+                                type: p.category === 'IM平台' ? 'platform' : (p.category === '核心插件' ? 'core' : 'utility')
+                            }));
+                            
+                            industryStats.activePlugins = result.installed_plugins.length;
+                        } else {
+                            plugins.value = defaultPluginsData;
+                        }
+                    } catch (e) {
+                        console.error('获取插件失败:', e);
+                        plugins.value = defaultPluginsData;
+                    }
+                };
+
+                const fetchNotifications = async () => {
+                    try {
+                        const res = await apiFetch('/settings/notifications');
+                        const result = await res.json();
+                        if (result.success) {
+                            const notif = result.notifications;
+                            notifications.value.find(n => n.name === '新订单通知').enabled = notif.order_notification;
+                            notifications.value.find(n => n.name === '日报推送').enabled = notif.daily_report;
+                            reminderSettings.dailyReportTime = notif.report_time || '09:00';
+                            notifications.value.find(n => n.name === '截单提醒').enabled = notif.cutoff_reminder;
+                            reminderSettings.cutoffTime = notif.cutoff_time || '20:00';
+                        }
+                    } catch (e) {
+                        console.error('获取通知设置失败:', e);
+                    }
+                };
+
+                const getPluginIcon = (industry) => {
+                    const icons = {
+                        seafood: '🦐',
+                        fooddelivery: '🍽️',
+                        education: '📚',
+                        realestate: '🏠',
+                        travel: '✈️',
+                        construction: '🏗️',
+                        core: '⚙️',
+                        utility: '🛠️',
+                        platform: '💬'
+                    };
+                    return icons[industry] || '🧩';
+                };
+
+                const saveProfile = async () => {
+                    loading.value = true;
+                    try {
+                        const res = await apiFetch('/settings/profile', {
+                            method: 'PUT',
+                            body: JSON.stringify({
+                                username: profile.username,
+                                phone: profile.phone,
+                                company_name: profile.company_name,
+                                industry: profile.industry
+                            })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            ElMessage.success('个人资料已保存');
+                            currentIndustryCode.value = profile.industry;
+                        } else {
+                            ElMessage.error(result.error || '保存失败');
+                        }
+                    } catch (e) {
+                        ElMessage.error('保存失败，请检查网络');
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const changePassword = async () => {
+                    if (!passwordForm.current || !passwordForm.new || !passwordForm.confirm) {
+                        ElMessage.warning('请填写完整信息');
+                        return;
+                    }
+                    if (passwordForm.new !== passwordForm.confirm) {
+                        ElMessage.error('两次输入的密码不一致');
+                        return;
+                    }
+                    
+                    try {
+                        const res = await apiFetch('/auth/change-password', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                old_password: passwordForm.current,
+                                new_password: passwordForm.new
+                            })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            ElMessage.success('密码修改成功');
+                            passwordForm.current = '';
+                            passwordForm.new = '';
+                            passwordForm.confirm = '';
+                        } else {
+                            ElMessage.error(result.error || '修改失败');
+                        }
+                    } catch (e) {
+                        ElMessage.error('修改失败，请检查网络');
+                    }
+                };
+                
+                const installPlugin = async (plugin) => {
+                    try {
+                        const res = await apiFetch('/settings/plugins/install', {
+                            method: 'POST',
+                            body: JSON.stringify({ plugin_id: plugin.id })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            plugin.installed = true;
+                            installedPluginIds.value.add(plugin.id);
+                            industryStats.activePlugins++;
+                            ElMessage.success(`${plugin.name} 安装成功`);
+                        } else {
+                            ElMessage.error(result.error || '安装失败');
+                        }
+                    } catch (e) {
+                        ElMessage.error('安装失败，请检查网络');
+                    }
+                };
+                
+                const uninstallPlugin = async (plugin) => {
+                    if (plugin.type === 'core') {
+                        ElMessage.warning('核心插件无法卸载');
+                        return;
+                    }
+                    try {
+                        const res = await apiFetch('/settings/plugins/uninstall', {
+                            method: 'POST',
+                            body: JSON.stringify({ plugin_id: plugin.id })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            plugin.installed = false;
+                            installedPluginIds.value.delete(plugin.id);
+                            industryStats.activePlugins--;
+                            ElMessage.success(`${plugin.name} 已卸载`);
+                        } else {
+                            ElMessage.error(result.error || '卸载失败');
+                        }
+                    } catch (e) {
+                        ElMessage.error('卸载失败，请检查网络');
+                    }
+                };
+                
+                const saveNotifications = async () => {
+                    try {
+                        const res = await apiFetch('/settings/notifications', {
+                            method: 'PUT',
+                            body: JSON.stringify({
+                                order_notification: notifications.value.find(n => n.name === '新订单通知').enabled,
+                                daily_report: notifications.value.find(n => n.name === '日报推送').enabled,
+                                report_time: reminderSettings.dailyReportTime,
+                                cutoff_reminder: notifications.value.find(n => n.name === '截单提醒').enabled,
+                                cutoff_time: reminderSettings.cutoffTime
+                            })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            ElMessage.success('通知设置已保存');
+                        } else {
+                            ElMessage.error(result.error || '保存失败');
+                        }
+                    } catch (e) {
+                        ElMessage.error('保存失败，请检查网络');
+                    }
+                };
+                
+                const confirmChangeIndustry = async () => {
+                    if (!selectedIndustryForChange.value) {
+                        ElMessage.warning('请选择要切换的行业');
+                        return;
+                    }
+                    
+                    try {
+                        const res = await apiFetch('/settings/industry', {
+                            method: 'PUT',
+                            body: JSON.stringify({ industry: selectedIndustryForChange.value })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            currentIndustryCode.value = selectedIndustryForChange.value;
+                            profile.industry = selectedIndustryForChange.value;
+                            ElMessage.success('行业已切换');
+                            showChangeIndustry.value = false;
+                            await fetchPlugins();
+                        } else {
+                            ElMessage.error(result.error || '切换失败');
+                        }
+                    } catch (e) {
+                        ElMessage.error('切换失败，请检查网络');
+                    }
+                };
+
+                onMounted(() => {
+                    fetchProfile();
+                    fetchPlugins();
+                    fetchNotifications();
+                });
+
+                return {
+                    activeTab,
+                    searchKeyword,
+                    filterCategory,
+                    showChangeIndustry,
+                    selectedIndustryForChange,
+                    profile,
+                    passwordForm,
+                    notifications,
+                    reminderSettings,
+                    currentIndustry,
+                    industryStats,
+                    allIndustries,
+                    plugins,
+                    filteredPlugins,
+                    loading,
+                    saveProfile,
+                    changePassword,
+                    installPlugin,
+                    uninstallPlugin,
+                    saveNotifications,
+                    confirmChangeIndustry
+                };
+            }
+        })
+        .use(ElementPlus)
+        .component('Search', Search)
+        .component('Package', Package)
+        .mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行业方案 - AI IMBot | AI驱动的桌面机器人工具 | 支持20+行业规则模板</title>
+    <meta name="description" content="AI IMBot 内置20+行业预设规则模板，覆盖餐饮配送、火锅食材、茶饮咖啡、配件批发、水电五金等行业。支持批量圈选、增量操作、智能统计等核心功能。即装即用，无需手动配置规则。">
+    <meta name="keywords" content="AI IMBot, 行业规则, 预设模板, 餐饮配送, 火锅食材, 茶饮咖啡, 配件批发, 水电五金, IM订单自动化, 智能统计">
+    
+    <link rel="icon" type="image/x-icon" href="./public/favicon.ico">
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link rel="stylesheet" href="./public/css/common.css">
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "AI IMBot 行业方案",
+      "description": "支持20+行业预设规则模板的AI驱动桌面机器人工具",
+      "url": "https://imbot.ai/industries.html",
+      "isPartOf": {
+        "@type": "SoftwareApplication",
+        "name": "AI IMBot",
+        "applicationCategory": "BusinessApplication"
+      }
+    }
+    </script>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+    
+    <style>
+        html { scroll-behavior: smooth; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; line-height: 1.6; color: var(--text-primary); overflow-x: hidden; background: #f8fafc; }
+
+        .hero { background: var(--gradient-primary); color: #fff; padding: 160px 20px 60px; text-align: center; position: relative; overflow: hidden; }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        }
+        .hero-content { position: relative; z-index: 1; }
+        .hero h1 { font-size: 48px; margin-bottom: 15px; font-weight: 800; }
+        .hero p { font-size: 20px; opacity: 0.95; max-width: 700px; margin: 0 auto; }
+        .hero-buttons { display: flex; gap: 16px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+        .hero-buttons .el-button { min-width: 160px; border-radius: 20px; }
+
+        .industries { padding: 100px 20px; background: #fff; }
+        .section-title { text-align: center; font-size: 40px; margin-bottom: 20px; color: var(--text-primary); font-weight: 800; }
+        .section-subtitle { text-align: center; font-size: 18px; color: var(--text-muted); margin-bottom: 80px; max-width: 700px; margin-left: auto; margin-right: auto; }
+        .industry-grid { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 30px; }
+        .industry-card { 
+            display: flex; 
+            gap: 24px; 
+            padding: 35px; 
+            border-radius: 20px; 
+            background: #f8fafc; 
+            border: 1px solid #e2e8f0; 
+            transition: all 0.4s; 
+            cursor: pointer;
+        }
+        .industry-card:hover { 
+            background: #fff; 
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.1); 
+            transform: translateY(-8px); 
+            border-color: var(--primary-color);
+        }
+        .industry-icon { 
+            width: 70px; 
+            height: 70px; 
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); 
+            color: var(--primary-color); 
+            border-radius: 18px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 32px; 
+            flex-shrink: 0; 
+            transition: all 0.3s;
+        }
+        .industry-card:hover .industry-icon { 
+            background: var(--gradient-primary); 
+            color: #fff; 
+            transform: scale(1.1);
+        }
+        .industry-content h3 { font-size: 22px; color: var(--text-primary); margin-bottom: 12px; font-weight: 700; }
+        .industry-content p { color: var(--text-muted); font-size: 15px; line-height: 1.7; margin-bottom: 18px; }
+        .industry-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+        .industry-tag { 
+            font-size: 13px; 
+            padding: 6px 14px; 
+            background: #fff; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 20px; 
+            color: #475569; 
+            transition: all 0.3s;
+        }
+        .industry-card:hover .industry-tag {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .features-section { padding: 80px 20px; background: #f8fafc; }
+        .features-container { max-width: 1200px; margin: 0 auto; }
+        .features-title { text-align: center; font-size: 32px; color: var(--text-primary); margin-bottom: 40px; font-weight: 700; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .feature-item { 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 16px; 
+            border: 1px solid #e2e8f0; 
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .feature-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.08);
+            border-color: var(--primary-color);
+        }
+        .feature-icon { font-size: 40px; margin-bottom: 15px; color: var(--primary-color); }
+        .feature-item h4 { font-size: 18px; color: var(--text-primary); margin-bottom: 10px; font-weight: 600; }
+        .feature-item p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+        .footer { background: #020617; color: #94a3b8; padding: 80px 20px 40px; }
+        .footer-content { max-width: 1200px; margin: 0 auto; }
+        .footer-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 50px; margin-bottom: 60px; }
+        .footer-brand h3 { font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 20px; }
+        .footer-brand h3 span { background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .footer-brand p { font-size: 14px; line-height: 1.8; color: #64748b; }
+        .footer-links h4 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 20px; }
+        .footer-links ul { list-style: none; }
+        .footer-links li { margin-bottom: 12px; }
+        .footer-links a { color: #94a3b8; text-decoration: none; transition: color 0.3s; }
+        .footer-links a:hover { color: var(--primary-color); }
+        .footer-bottom { padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .footer-bottom p { font-size: 14px; }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 34px; }
+            .industry-grid { grid-template-columns: 1fr; }
+            .features-grid { grid-template-columns: 1fr; }
+            .footer-top { grid-template-columns: 1fr; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="navbar" data-page="industries"></div>
+
+        <section class="hero">
+            <div class="hero-content">
+                <h1>广泛适用于各类行业场景</h1>
+                <p>内置20+行业预设规则模板，即装即用，无需手动配置规则</p>
+                <div class="hero-buttons">
+                    <el-button type="primary" @click="goToDownload">立即体验</el-button>
+                    <el-button type="success" @click="goToCases">查看案例</el-button>
+                </div>
+            </div>
+        </section>
+
+        <section class="industries">
+            <h2 class="section-title">行业方案</h2>
+            <p class="section-subtitle">从餐饮配送、配件批发到水电五金，AI IMBot都能为您提供智能化的订单处理方案</p>
+            <div class="industry-grid">
+                <div class="industry-card">
+                    <div class="industry-icon">🍜</div>
+                    <div class="industry-content">
+                        <h3>餐饮配送</h3>
+                        <p>专为餐饮门店设计，支持特色食材的智能识别。支持批量圈选语法和增量操作，自动生成采购单和配送单。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">特色食材识别</span>
+                            <span class="industry-tag">批量圈选</span>
+                            <span class="industry-tag">增量操作</span>
+                            <span class="industry-tag">日/周/月报表</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">🍲</div>
+                    <div class="industry-content">
+                        <h3>火锅食材配送</h3>
+                        <p>支持荤素分类统计、锅底口味备注提取、蘸料偏好识别。自动统计荤菜与素菜采购比例，支持食材分类汇总。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">荤素分类</span>
+                            <span class="industry-tag">锅底备注</span>
+                            <span class="industry-tag">蘸料识别</span>
+                            <span class="industry-tag">TOP食材排行</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">🧋</div>
+                    <div class="industry-content">
+                        <h3>茶饮咖啡原料配送</h3>
+                        <p>服务奶茶店、咖啡店连锁门店的原料补货。支持茶类原料、配料识别，按门店编号快捷下单，自动汇总各分店需求。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">连锁管理</span>
+                            <span class="industry-tag">糖度识别</span>
+                            <span class="industry-tag">配方同步</span>
+                            <span class="industry-tag">多店汇总</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">🏍️</div>
+                    <div class="industry-content">
+                        <h3>摩托车配件配送</h3>
+                        <p>支持配件型号俗称、品牌代码和维修店快速下单。AI自动识别专业表达，减少漏配和配错风险。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">型号识别</span>
+                            <span class="industry-tag">配件俗称</span>
+                            <span class="industry-tag">维修店模式</span>
+                            <span class="industry-tag">配送统计</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">🔧</div>
+                    <div class="industry-content">
+                        <h3>水电五金配送</h3>
+                        <p>支持临时加单、改单、规格备注识别。智能将订单自动拆解为结构化数据并按线路汇总。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">改单识别</span>
+                            <span class="industry-tag">规格提取</span>
+                            <span class="industry-tag">线路汇总</span>
+                            <span class="industry-tag">增量下单</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">⚡</div>
+                    <div class="industry-content">
+                        <h3>电动车配件配送</h3>
+                        <p>支持电池、控制器、轮毂、电机等配件识别。自动区分大件运送要求，按客户需求生成分类提示。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">大件区分</span>
+                            <span class="industry-tag">配件识别</span>
+                            <span class="industry-tag">运输提示</span>
+                            <span class="industry-tag">尺寸备注</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">📱</div>
+                    <div class="industry-content">
+                        <h3>手机零配件配送</h3>
+                        <p>支持型号快速识别、图片文字备注解析和维修店订单合并。自动处理细颗粒订单。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">型号识别</span>
+                            <span class="industry-tag">配件图片备注</span>
+                            <span class="industry-tag">维修店订单</span>
+                            <span class="industry-tag">批量配单</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">🍺</div>
+                    <div class="industry-content">
+                        <h3>酒水配送</h3>
+                        <p>支持冰镇/常温类备注。自动区分存储要求，并支持聚合多条同客户订单，避免酒水漏发、错发。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">冰镇/常温</span>
+                            <span class="industry-tag">批量聚合</span>
+                            <span class="industry-tag">加单识别</span>
+                            <span class="industry-tag">即时配送</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">🍣</div>
+                    <div class="industry-content">
+                        <h3>日料寿司食材配送</h3>
+                        <p>专为日料店设计，支持海鲜类、寿司材料、调料类智能识别。支持寿司套餐识别和批量下单。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">海鲜识别</span>
+                            <span class="industry-tag">寿司套餐</span>
+                            <span class="industry-tag">进口食材</span>
+                            <span class="industry-tag">鲜度管理</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">🍞</div>
+                    <div class="industry-content">
+                        <h3>烘焙甜品原料配送</h3>
+                        <p>支持面粉、黄油、奶油、糖类等烘焙原料识别。支持品牌备注提取，自动统计各类原料消耗量。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">品牌识别</span>
+                            <span class="industry-tag">原料分类</span>
+                            <span class="industry-tag">消耗分析</span>
+                            <span class="industry-tag">效期提醒</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">🍔</div>
+                    <div class="industry-content">
+                        <h3>西式快餐食材配送</h3>
+                        <p>专为西式快餐店设计，支持肉类、主食、酱料类识别。支持套餐组合识别和批量下单。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">套餐识别</span>
+                            <span class="industry-tag">分类统计</span>
+                            <span class="industry-tag">批量下单</span>
+                            <span class="industry-tag">趋势分析</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="industry-card">
+                    <div class="industry-icon">🍢</div>
+                    <div class="industry-content">
+                        <h3>烧烤店食材配送</h3>
+                        <p>支持肉类串品、素菜类、海鲜类识别。支持辣度备注提取，自动统计各类食材消耗量。</p>
+                        <div class="industry-tags">
+                            <span class="industry-tag">串品识别</span>
+                            <span class="industry-tag">辣度备注</span>
+                            <span class="industry-tag">荤素分类</span>
+                            <span class="industry-tag">消耗统计</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features-section">
+            <div class="features-container">
+                <h3 class="features-title">🎯 每个行业模板都包含</h3>
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">📝</div>
+                        <h4>智能解析规则</h4>
+                        <p>智能识别商品名称、数量、单位，支持批量圈选和增量操作语法</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📊</div>
+                        <h4>自动统计规则</h4>
+                        <p>自动生成日/周/月报表，支持饼图、柱状图、折线图等多种图表类型</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🤖</div>
+                        <h4>智能回复机器人</h4>
+                        <p>智能回复客户咨询，支持欢迎语、接单确认、价格查询等场景</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="footer"></div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        const app = createApp({
+            setup() {
+                const goToDownload = () => {
+                    window.location.href = 'index.html#download';
+                };
+
+                const goToCases = () => {
+                    window.location.href = 'cases.html';
+                };
+
+                return {
+                    goToDownload,
+                    goToCases
+                }
+            }
+        });
+        
+        app.use(ElementPlus);
+        
+        app.mount('#app');
+    </script>
+    
+    <script src="./public/js/navbar.js"></script>
+    <script src="./public/js/footer.js"></script>
+</body>
+</html>
