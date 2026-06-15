@@ -1,0 +1,400 @@
+import logging
+from flask import Blueprint, request, jsonify
+from sqlalchemy.orm import Session
+from database.db_config import get_db_session
+from services.auth_service import login_required
+from plugins.construction.service import ConstructionService
+
+logger = logging.getLogger(__name__)
+
+construction_bp = Blueprint('construction', __name__, url_prefix='/api/construction')
+
+
+@construction_bp.route('/workers', methods=['GET', 'POST'])
+@login_required
+def workers():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    if request.method == 'GET':
+        team = request.args.get('team', None)
+        position = request.args.get('position', None)
+        workers = service.list_workers(team, position)
+        db.close()
+        return jsonify({'success': True, 'count': len(workers), 'workers': workers}), 200
+
+    data = request.get_json()
+    if not data or 'name' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少工人姓名'}), 400
+
+    result = service.create_worker(data)
+    db.close()
+    return jsonify(result), 201 if result['success'] else 400
+
+
+@construction_bp.route('/attendance/checkin', methods=['POST'])
+@login_required
+def checkin():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'worker_id' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少工人ID'}), 400
+
+    result = service.check_in(data['worker_id'], data.get('location'))
+    db.close()
+    return jsonify(result), 200
+
+
+@construction_bp.route('/attendance/checkout', methods=['POST'])
+@login_required
+def checkout():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'worker_id' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少工人ID'}), 400
+
+    result = service.check_out(data['worker_id'], data.get('location'))
+    db.close()
+    return jsonify(result), 200
+
+
+@construction_bp.route('/attendance', methods=['GET'])
+@login_required
+def attendance():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    worker_id = request.args.get('worker_id', None)
+    date_str = request.args.get('date', None)
+    records = service.list_attendance(worker_id, date_str)
+    db.close()
+    return jsonify({'success': True, 'count': len(records), 'records': records}), 200
+
+
+@construction_bp.route('/leave', methods=['POST'])
+@login_required
+def leave():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'worker_id' not in data or 'start_date' not in data or 'end_date' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+
+    result = service.apply_leave(data)
+    db.close()
+    return jsonify(result), 201 if result['success'] else 400
+
+
+@construction_bp.route('/leave/<int:leave_id>/approve', methods=['POST'])
+@login_required
+def approve_leave(leave_id):
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    approved = data.get('approved', False)
+    approved_by = data.get('approved_by', '')
+
+    result = service.approve_leave(leave_id, approved, approved_by)
+    db.close()
+    return jsonify(result), 200
+
+
+@construction_bp.route('/weather', methods=['GET', 'POST'])
+@login_required
+def weather():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    if request.method == 'GET':
+        project_id = request.args.get('project_id', None)
+        date_str = request.args.get('date', None)
+        records = service.list_weather(project_id, date_str)
+        db.close()
+        return jsonify({'success': True, 'count': len(records), 'weather': records}), 200
+
+    data = request.get_json()
+    if not data or 'project_id' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少项目ID'}), 400
+
+    result = service.create_weather(data)
+    db.close()
+    return jsonify(result), 201 if result['success'] else 400
+
+
+@construction_bp.route('/schedule', methods=['GET', 'POST'])
+@login_required
+def schedule():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    if request.method == 'GET':
+        project_id = request.args.get('project_id', None)
+        records = service.list_schedules(project_id)
+        db.close()
+        return jsonify({'success': True, 'count': len(records), 'schedules': records}), 200
+
+    data = request.get_json()
+    if not data or 'project_id' not in data or 'task_name' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+
+    result = service.create_schedule(data)
+    db.close()
+    return jsonify(result), 201 if result['success'] else 400
+
+
+@construction_bp.route('/schedule/<int:schedule_id>/progress', methods=['POST'])
+@login_required
+def update_schedule_progress(schedule_id):
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'progress' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少进度'}), 400
+
+    result = service.update_schedule_progress(
+        schedule_id,
+        data['progress'],
+        data.get('actual_start_date'),
+        data.get('actual_end_date')
+    )
+    db.close()
+    return jsonify(result), 200
+
+
+@construction_bp.route('/work_area', methods=['GET', 'POST'])
+@login_required
+def work_area():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    if request.method == 'GET':
+        project_id = request.args.get('project_id', None)
+        records = service.list_schedules(project_id)
+        db.close()
+        return jsonify({'success': True, 'count': len(records), 'work_areas': records}), 200
+
+    data = request.get_json()
+    if not data or 'project_id' not in data or 'area_name' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+
+    result = service.create_work_area(data)
+    db.close()
+    return jsonify(result), 201 if result['success'] else 400
+
+
+@construction_bp.route('/work_area/assign', methods=['POST'])
+@login_required
+def assign_worker():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'work_area_id' not in data or 'worker_id' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+
+    result = service.assign_worker(
+        data['work_area_id'],
+        data['worker_id'],
+        data.get('date'),
+        data.get('task', '')
+    )
+    db.close()
+    return jsonify(result), 200
+
+
+@construction_bp.route('/work_area/progress', methods=['POST'])
+@login_required
+def record_progress():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'work_area_id' not in data or 'progress' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+
+    result = service.record_progress(
+        data['work_area_id'],
+        data.get('date'),
+        data['progress'],
+        data.get('completed_amount', 0),
+        data.get('unit', '')
+    )
+    db.close()
+    return jsonify(result), 200
+
+
+@construction_bp.route('/work_volume', methods=['GET', 'POST'])
+@login_required
+def work_volume():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    if request.method == 'GET':
+        project_id = request.args.get('project_id', None)
+        work_type = request.args.get('work_type', None)
+        date_str = request.args.get('date', None)
+        records = service.list_work_volume(project_id, work_type, date_str)
+        db.close()
+        return jsonify({'success': True, 'count': len(records), 'work_volume': records}), 200
+
+    data = request.get_json()
+    if not data or 'project_id' not in data or 'work_type' not in data or 'quantity' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+
+    result = service.create_work_volume(data)
+    db.close()
+    return jsonify(result), 201 if result['success'] else 400
+
+
+@construction_bp.route('/material', methods=['GET', 'POST'])
+@login_required
+def material():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    if request.method == 'POST':
+        data = request.get_json()
+        if not data or 'material_name' not in data or 'unit' not in data:
+            db.close()
+            return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+
+        result = service.create_material(data)
+        db.close()
+        return jsonify(result), 201 if result['success'] else 400
+
+    db.close()
+    return jsonify({'success': True}), 200
+
+
+@construction_bp.route('/material/in', methods=['POST'])
+@login_required
+def material_in():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'material_id' not in data or 'quantity' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+
+    result = service.material_in(
+        data['material_id'],
+        data.get('project_id', 0),
+        data['quantity'],
+        data.get('price', 0),
+        data.get('operator', '')
+    )
+    db.close()
+    return jsonify(result), 200
+
+
+@construction_bp.route('/material/out', methods=['POST'])
+@login_required
+def material_out():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'material_id' not in data or 'quantity' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+
+    result = service.material_out(
+        data['material_id'],
+        data.get('project_id', 0),
+        data['quantity'],
+        data.get('operator', '')
+    )
+    db.close()
+    return jsonify(result), 200
+
+
+@construction_bp.route('/safety/check', methods=['POST'])
+@login_required
+def safety_check():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'project_id' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少项目ID'}), 400
+
+    result = service.create_safety_check(data)
+    db.close()
+    return jsonify(result), 201 if result['success'] else 400
+
+
+@construction_bp.route('/safety/issue', methods=['POST'])
+@login_required
+def safety_issue():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'project_id' not in data or 'description' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+
+    result = service.create_safety_issue(data)
+    db.close()
+    return jsonify(result), 201 if result['success'] else 400
+
+
+@construction_bp.route('/quality/check', methods=['POST'])
+@login_required
+def quality_check():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    data = request.get_json()
+    if not data or 'project_id' not in data:
+        db.close()
+        return jsonify({'success': False, 'error': '缺少项目ID'}), 400
+
+    result = service.create_quality_check(data)
+    db.close()
+    return jsonify(result), 201 if result['success'] else 400
+
+
+@construction_bp.route('/report', methods=['GET'])
+@login_required
+def report():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    report_type = request.args.get('type', 'daily')
+    date_range = request.args.get('date', None)
+    result = service.generate_report(report_type, date_range)
+    db.close()
+    return jsonify(result), 200 if result['success'] else 400
+
+
+@construction_bp.route('/stats', methods=['GET'])
+@login_required
+def stats():
+    db: Session = get_db_session()
+    service = ConstructionService(db)
+
+    period = request.args.get('period', 'today')
+    stats = service.get_stats(period)
+    db.close()
+    return jsonify({'success': True, 'stats': stats}), 200

@@ -1,0 +1,178 @@
+$brand-primary: #6366f1;
+$brand-primary-dark: #4f46e5;
+$brand-primary-light: #818cf8;
+$brand-accent: #10b981;
+$brand-accent-dark: #059669;
+
+$bg-primary: #ffffff;
+$bg-secondary: #f1f5f9;
+$bg-tertiary: #e2e8f0;
+$bg-dark: #0f172a;
+$bg-dark-secondary: #1e293b;
+
+$text-primary: #0f172a;
+$text-secondary: #334155;
+$text-muted: #64748b;
+$text-placeholder: #94a3b8;
+$text-on-dark: #f8fafc;
+$text-secondary-on-dark: #cbd5e1;
+$text-muted-on-dark: #94a3b8;
+
+$border-color: #e2e8f0;
+$border-color-dark: #334155;
+
+$success-color: #22c55e;
+$warning-color: #f59e0b;
+$error-color: #ef4444;
+$info-color: #3b82f6;
+
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+$radius-sm: 6px;
+$radius-md: 12px;
+$radius-lg: 16px;
+$radius-xl: 24px;
+$radius-full: 9999px;
+
+$font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+:root {
+  --brand-primary: #{$brand-primary};
+  --brand-primary-dark: #{$brand-primary-dark};
+  --brand-primary-light: #{$brand-primary-light};
+  --brand-accent: #{$brand-accent};
+  --brand-accent-dark: #{$brand-accent-dark};
+
+  --bg-primary: #{$bg-primary};
+  --bg-secondary: #{$bg-secondary};
+  --bg-tertiary: #{$bg-tertiary};
+  --bg-dark: #{$bg-dark};
+  --bg-dark-secondary: #{$bg-dark-secondary};
+
+  --text-primary: #{$text-primary};
+  --text-secondary: #{$text-secondary};
+  --text-muted: #{$text-muted};
+  --text-placeholder: #{$text-placeholder};
+  --text-on-dark: #{$text-on-dark};
+  --text-secondary-on-dark: #{$text-secondary-on-dark};
+  --text-muted-on-dark: #{$text-muted-on-dark};
+
+  --border-color: #{$border-color};
+  --border-color-dark: #{$border-color-dark};
+
+  --success-color: #{$success-color};
+  --warning-color: #{$warning-color};
+  --error-color: #{$error-color};
+  --info-color: #{$info-color};
+
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+  --shadow-xl: #{$shadow-xl};
+
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+  --radius-full: #{$radius-full};
+
+  --font-family: #{$font-family};
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+:deep(.el-button--primary) {
+  --el-button-bg-color: var(--brand-primary);
+  --el-button-border-color: var(--brand-primary);
+  --el-button-hover-bg-color: var(--brand-primary-dark);
+  --el-button-hover-border-color: var(--brand-primary-dark);
+  --el-button-active-bg-color: var(--brand-primary-dark);
+  --el-button-active-border-color: var(--brand-primary-dark);
+}
+
+:deep(.el-card) {
+  --el-card-bg-color: var(--bg-primary);
+  --el-card-border-color: var(--border-color);
+  --el-card-shadow: var(--shadow-md);
+}
+
+:deep(.el-input__wrapper) {
+  --el-input-bg-color: var(--bg-primary);
+  --el-input-border-color: var(--border-color);
+}
+
+:deep(.el-menu) {
+  --el-menu-bg-color: var(--bg-dark);
+  --el-menu-text-color: var(--text-secondary-on-dark);
+  --el-menu-active-color: var(--brand-primary-light);
+  --el-menu-hover-bg-color: rgba(99, 102, 241, 0.1);
+}
+
+:deep(.el-table) {
+  --el-table-bg-color: var(--bg-primary);
+  --el-table-row-hover-bg-color: rgba(99, 102, 241, 0.05);
+  --el-table-border-color: var(--border-color);
+}
+
+:deep(.el-pagination) {
+  --el-pagination-item-bg-color: var(--bg-primary);
+  --el-pagination-item-border-color: var(--border-color);
+  --el-pagination-text-color: var(--text-secondary);
+}
+
+:deep(.el-dialog) {
+  --el-dialog-bg-color: var(--bg-primary);
+  --el-dialog-border-color: var(--border-color);
+}
+
+:deep(.el-form-item__label) {
+  --el-form-item-label-color: var(--text-secondary);
+}
+
+:deep(.el-input__inner) {
+  --el-input-text-color: var(--text-primary);
+  --el-input-placeholder-color: var(--text-placeholder);
+}
+
+:deep(.el-select) {
+  --el-select-bg-color: var(--bg-primary);
+  --el-select-border-color: var(--border-color);
+}
+
+:deep(.el-checkbox__label) {
+  --el-checkbox-label-color: var(--text-secondary);
+}
+
+:deep(.el-radio__label) {
+  --el-radio-label-color: var(--text-secondary);
+}
+
+:deep(.el-switch) {
+  --el-switch-on-bg-color: var(--brand-primary);
+}
+
+:deep(.el-tabs) {
+  --el-tabs-header-text-color: var(--text-muted);
+  --el-tabs-active-text-color: var(--text-primary);
+  --el-tabs-active-bar-color: var(--brand-primary);
+}
+
+:deep(.el-badge__content) {
+  --el-badge-bg-color: var(--error-color);
+}
