@@ -543,8 +543,8 @@
                             }).map(p => ({
                                 ...p,
                                 installed: installedPluginIds.value.has(p.id),
-                                icon: getPluginIcon(p.industry || p.category),
-                                type: p.category === 'IM平台' ? 'platform' : (p.category === '核心插件' ? 'core' : 'utility')
+                                icon: p.icon || getPluginIcon(p.industry || p.category),
+                                type: p.type || (p.category === 'IM平台' ? 'platform' : (p.category === '核心插件' ? 'core' : 'utility'))
                             }));
                             
                             industryStats.activePlugins = result.installed_plugins.length;

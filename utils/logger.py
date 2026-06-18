@@ -63,7 +63,20 @@ def setup_logger(name: str = None, level: str = None) -> logging.Logger:
     file_handler.setLevel(log_level)
     file_handler.setFormatter(detailed_format)
     file_handler.suffix = '%Y%m%d'
+
+    # 添加文件大小限制兜底 (单个日志文件超过100MB时触发轮转)
+    size_handler = RotatingFileHandler(
+        os.path.join(settings.LOG_DIR, 'app_size.log'),
+        maxBytes=100 * 1024 * 1024,  # 100MB
+        backupCount=5,
+        encoding='utf-8',
+        delay=True,
+    )
+    size_handler.setLevel(log_level)
+    size_handler.setFormatter(detailed_format)
+
     logger.addHandler(file_handler)
+    logger.addHandler(size_handler)
 
     # 错误日志文件 (单独记录ERROR及以上级别)
     error_log_file = os.path.join(settings.LOG_DIR, 'error.log')

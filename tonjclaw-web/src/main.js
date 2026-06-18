@@ -10,9 +10,12 @@ import './styles/theme.scss'
 
 const app = createApp(App)
 
-// 注册所有图标
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-  app.component(key, component)
+// 按需注册常用图标，减少全局注册开销
+const commonIcons = ['ChatDotRound', 'Search', 'ArrowDown', 'ArrowUp', 'Delete', 'Edit', 'Plus', 'Refresh', 'Setting', 'User', 'Menu', 'Close']
+for (const key of commonIcons) {
+  if (ElementPlusIconsVue[key]) {
+    app.component(key, ElementPlusIconsVue[key])
+  }
 }
 
 app.use(ElementPlus, { locale: zhCn })

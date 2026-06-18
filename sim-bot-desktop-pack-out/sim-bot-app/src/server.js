@@ -18,6 +18,7 @@ import { normalizeHookInboundPayload } from './hook/recv_normalize.js';
 import { dispatchInboundMessage } from './tcp/gateway.js';
 import { createSidecarLogger } from './util/logger.js';
 import { logInboundDispatchResult } from './util/log_recv.js';
+import { pluginManager } from './plugins/manager.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = process.env.SIM_BOT_ROOT
   ? path.resolve(process.env.SIM_BOT_ROOT)
@@ -76,6 +77,8 @@ async function main() {
   seedSuperAdmin(db, 'admin', hashPassword('admin123'));
   logger.info('默认超级管理员: admin / admin123 （请在「系统运维 → 账号管理」尽快修改口令）');
 
+
+
   if (process.env.DEV_SUPER_ENABLE === '1') {
     const devUser = String(process.env.DEV_SUPER_USERNAME || '').normalize('NFKC').trim().slice(0, 64);
     const devPass = process.env.DEV_SUPER_PASSWORD != null ? String(process.env.DEV_SUPER_PASSWORD) : '';
@@ -109,8 +112,16 @@ async function main() {
     );
   } else {
     logger.info(
-      '[产品授权] 未完成安装授权时控制台仅开放 /api/setup/*；请将 scripts/gen-product-setup-license.mjs 生成的安装码交给用户。'
+      '[产品授权] 未完成产品授权时控制台仅开放 /api/setup/*；支持两种授权方式：① 在线登录（邮箱+密码）② 离线激活码。'
     );
+    const TONJCLAW_API_BASE = process.env.TONJCLAW_API_BASE || process.env.CLOUD_API_BASE;
+    if (TONJCLAW_API_BASE) {
+      logger.info(`[产品授权] 在线授权服务器: ${TONJCLAW_API_BASE}`);
+    } else {
+      logger.info(
+        '[产品授权] 如需使用在线登录授权，请设置 TONJCLAW_API_BASE 环境变量指向云端服务器地址。'
+      );
+    }
   }
 
   const BACKUP_DEFAULT_DIR = process.env.BACKUP_DIR || path.join(path.dirname(SQLITE_PATH), 'backups');
@@ -134,6 +145,19 @@ async function main() {
     if (r.ok) logger.info('Hook 控制面探测成功');
     else logger.warn('Hook 控制面不可达（课题可忽略）:', r.error);
   });
+
+  await pluginManager.initialize({
+    db,
+    logger,
+    hookClient: hook,
+    config: {
+      jwtSecret: JWT_SECRET,
+      publicKeyPath: PUBLIC_KEY,
+      sqlitePath: SQLITE_PATH,
+    },
+    pluginManager,
+  });
+  logger.info('[plugins] 插件管理器初始化完成:', JSON.stringify(pluginManager.listPlugins()));
 
   const app = express();
   app.use(cors());
@@ -165,8 +189,16 @@ async function main() {
       hookClient: hook,
       dataBackupService,
       sqlitePath: SQLITE_PATH,
+      pluginManager,
     })
   );
+
+  const pluginRoutes = pluginManager.getRoutes();
+  for (const { prefix, router } of pluginRoutes) {
+    app.use('/api' + prefix, router);
+    logger.info('[plugins] 注册路由:', prefix);
+  }
+
   const legacyPublic = path.join(__dirname, '../public');
   const adminDist = path.join(__dirname, '../admin/dist');
   const adminIndex = path.join(adminDist, 'index.html');

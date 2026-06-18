@@ -278,6 +278,57 @@ export function createApiRouter({
     });
   });
 
+  /** 在线登录（首次使用）：支持在线账号密码认证 */
+  r.post('/setup/online-login', async (req, res) => {
+    try {
+      const { email, password } = req.body || {};
+      if (!email || !password) {
+        return res.status(400).json({ error: '请输入邮箱和密码' });
+      }
+      const { onlineLogin } = await import('../auth/online_license.js');
+      const loginResult = await onlineLogin(email, password);
+      if (!loginResult.ok) {
+        return res.status(401).json({ error: loginResult.error });
+      }
+      if (!loginResult.license?.is_valid) {
+        return res.status(403).json({ 
+          error: '授权已到期或未开通授权，请续费后再使用', 
+          license: loginResult.license || null 
+        });
+      }
+      if (!loginResult.license?.expires_at) {
+        return res.status(403).json({ 
+          error: '授权信息不完整，请联系客服', 
+          license: loginResult.license || null 
+        });
+      }
+      const { upsertOnlineLicense } = await import('../db/online_license_store.js');
+      upsertOnlineLicense(db, {
+        user_id: loginResult.user.id,
+        email: loginResult.user.email,
+        auth_token: loginResult.token,
+        expires_at: loginResult.license.expires_at,
+        subscription_type: loginResult.license.subscription_type,
+        max_groups: loginResult.license.max_groups,
+      });
+      setAppSetting(SETUP_KEYS.PRODUCT_DONE, '1');
+      if (typeof db.persist === 'function') db.persist();
+      res.json({
+        ok: true,
+        user: loginResult.user,
+        license: loginResult.license,
+        expire_display: (() => {
+          if (!loginResult.license?.expires_at) return '—';
+          const d = new Date(loginResult.license.expires_at);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })(),
+      });
+    } catch (e) {
+      logger.error('[setup/online-login]', e);
+      res.status(500).json({ error: String(e?.message || e) });
+    }
+  });
+
   r.post('/setup/complete', (req, res) => {
     try {
       if (skipProductSetup()) {
@@ -359,7 +410,7 @@ export function createApiRouter({
   r.use((req, res, next) => {
     if (skipProductSetup()) return next();
     const p = req.path || '';
-    if (p === '/setup/status' || p === '/setup/complete' || p === '/setup/wechat-login') return next();
+    if (p === '/setup/status' || p === '/setup/complete' || p === '/setup/online-login' || p === '/setup/wechat-login') return next();
     if (!isProductSetupCompleted()) {
       return res.status(423).json({ error: '请先完成产品与授权初始化', setup_required: true });
     }
@@ -567,6 +618,56 @@ export function createApiRouter({
 
   r.get('/me', auth, (req, res) => {
     res.json({ user: req.user });
+  });
+
+  /** 授权同步：从云端同步授权状态 */
+  r.post('/license/sync', auth, async (req, res) => {
+    try {
+      const { checkLicense } = await import('../auth/online_license.js');
+      const { upsertOnlineLicense, getOnlineLicense, clearOnlineLicense } = await import('../db/online_license_store.js');
+
+      const token = req.token || '';
+      const result = await checkLicense(token);
+
+      if (!result.ok) {
+        if (result.error && (result.error.includes('token') || result.error.includes('expired') || result.error.includes('认证'))) {
+          clearOnlineLicense(db);
+          if (typeof db.persist === 'function') db.persist();
+          return res.json({
+            ok: false,
+            sync_ok: false,
+            valid: false,
+            error: '登录已过期，请重新登录',
+          });
+        }
+      } else if (result.license) {
+        upsertOnlineLicense(db, {
+          user_id: req.user.uid || 0,
+          email: req.user.username || '',
+          auth_token: token,
+          expires_at: result.license.expires_at,
+          subscription_type: result.license.subscription_type,
+          max_groups: result.license.max_groups,
+        });
+        if (typeof db.persist === 'function') db.persist();
+      }
+
+      const local = getOnlineLicense(db);
+      return res.json({
+        ok: true,
+        sync_ok: result.ok,
+        valid: local ? new Date(local.expires_at) > new Date() : false,
+        license: local ? {
+          expires_at: local.expires_at,
+          subscription_type: local.subscription_type,
+          max_groups: local.max_groups,
+        } : null,
+        sync_error: result.ok ? null : (result.error || null),
+      });
+    } catch (e) {
+      logger.error('[license/sync]', e);
+      return res.status(500).json({ error: String(e?.message || e) });
+    }
   });
 
   /** 超级管理：群绑定 */
@@ -2381,6 +2482,7 @@ export function createApiRouter({
     if (typeof db.persist === 'function') db.persist();
     const row = getRobotConfig(db);
     const prof = getPrdWechatProfile(db);
+    // 在线授权信息会通过 getPrdWechatProfile 返回
     res.json({
       robot_configured: Boolean(row),
       robot_valid: isRobotLicenseValid(db),
@@ -2389,6 +2491,9 @@ export function createApiRouter({
       wxid: prof.wxid || row?.wxid || '',
       login_wxid: prof.login_wxid || '',
       robot_wxid: prof.robot_wxid || row?.wxid || '',
+      // 在线授权信息（来自 getPrdWechatProfile）
+      online_auth: prof.online_auth || null,
+      license_source: prof.license_source || 'none',
     });
   });
 
@@ -2541,6 +2646,5 @@ export function createApiRouter({
       res.status(400).json({ error: String(e?.message || e) });
     }
   });
-
   return r;
 }

@@ -159,23 +159,57 @@
 
         const API_BASE = '/api';
 
-        const industries = [
-            { label: '海鲜批发', value: 'seafood', icon: '🦐', description: '客户订单管理、急单处理、截单提醒', plugins: ['seafood'] },
-            { label: '餐饮配送', value: 'fooddelivery', icon: '🍽️', description: '商品管理、订单处理、促销活动', plugins: ['fooddelivery'] },
-            { label: '教育培训', value: 'education', icon: '📚', description: '课程管理、学员管理、学习进度', plugins: ['education'] },
-            { label: '房产中介', value: 'realestate', icon: '🏠', description: '房源管理、客户管理、智能匹配', plugins: ['realestate'] },
-            { label: '旅行社', value: 'travel', icon: '✈️', description: '线路管理、群配置、报名处理', plugins: ['travel'] },
-            { label: '工地管理', value: 'construction', icon: '🏗️', description: '工人打卡、工期管理、安全检查', plugins: ['construction'] },
-        ];
+        const industries = ref([]);
+        const pluginDetails = ref({});
+        const industriesLoaded = ref(false);
 
-        const pluginDetails = {
-            seafood: { id: 'seafood', name: '海鲜批发插件', icon: '🦐', description: '客户订单管理、急单处理、截单提醒、报表统计', required: true },
-            fooddelivery: { id: 'fooddelivery', name: '餐饮配送插件', icon: '🍽️', description: '商品管理、订单处理、桌台管理、促销活动', required: true },
-            education: { id: 'education', name: '教育培训插件', icon: '📚', description: '课程管理、学员管理、教师管理、学习进度', required: true },
-            realestate: { id: 'realestate', name: '房产中介插件', icon: '🏠', description: '房源管理、客户管理、智能匹配、交易管理', required: true },
-            travel: { id: 'travel', name: '旅行社插件', icon: '✈️', description: '线路管理、群配置、报名处理、自动回复', required: true },
-            construction: { id: 'construction', name: '工地管理插件', icon: '🏗️', description: '工人打卡、工期管理、安全检查、材料管理', required: true },
-            core: { id: 'core', name: '核心功能插件', icon: '⚙️', description: '订单解析、消息捕获、规则引擎、报表生成', required: true },
+        // 从 API 获取行业和插件数据
+        const fetchIndustries = async () => {
+            try {
+                const res = await apiFetch('/setup/industries');
+                const result = await res.json();
+                if (result.success && result.industries.length > 0) {
+                    const mappedIndustries = result.industries.map(ind => ({
+                        label: ind.name,
+                        value: ind.code,
+                        icon: ind.icon,
+                        description: ind.description,
+                        plugins: ind.plugins
+                    }));
+                    industries.value = mappedIndustries;
+
+                    const details = {};
+                    result.industries.forEach(ind => {
+                        (ind.plugin_details || []).forEach(pd => {
+                            if (!details[pd.code]) {
+                                details[pd.code] = {
+                                    id: pd.code,
+                                    name: pd.name,
+                                    icon: pd.icon,
+                                    description: ind.description,
+                                    required: true
+                                };
+                            }
+                        });
+                    });
+                    // 确保核心插件存在
+                    if (!details['core']) {
+                        details['core'] = {
+                            id: 'core',
+                            name: '核心功能插件',
+                            icon: '⚙️',
+                            description: '订单解析、消息捕获、规则引擎、报表生成',
+                            required: true
+                        };
+                    }
+                    pluginDetails.value = details;
+                    industriesLoaded.value = true;
+                    return true;
+                }
+            } catch (e) {
+                console.warn('获取行业列表失败，使用默认数据:', e);
+            }
+            return false;
         };
 
         createApp({
@@ -233,7 +267,9 @@
                 };
 
                 const handleStep1 = async (input) => {
-                    const industry = industries.find(i => i.label.includes(input) || input.includes(i.label));
+                    const inds = industries.value;
+                    const details = pluginDetails.value;
+                    const industry = inds.find(i => i.label.includes(input) || input.includes(i.label));
                     
                     if (industry) {
                         selectedIndustry.value = industry.value;
@@ -257,7 +293,7 @@
                             addMessage('bot', 
                                 `太好了！您选择了 <strong>${industry.label}</strong> 行业。<br><br>${industry.description}`,
                                 {
-                                    plugins: [pluginDetails.core, ...industry.plugins.map(p => pluginDetails[p])]
+                                    plugins: [details['core'], ...industry.plugins.map(p => details[p])]
                                 }
                             );
                             
@@ -271,7 +307,7 @@
                             addMessage('bot', 
                                 '抱歉，我没完全理解。请从以下选项中选择您的行业：',
                                 {
-                                    quickReplies: industries
+                                    quickReplies: inds
                                 }
                             );
                         }, 500);
@@ -363,12 +399,35 @@
                     window.location.href = 'index.html';
                 };
 
-                onMounted(() => {
+                onMounted(async () => {
+                    // 先尝试从 API 获取行业数据
+                    const apiOk = await fetchIndustries();
+                    if (!apiOk) {
+                        // API 不可用时使用默认数据
+                        industries.value = [
+                            { label: '海鲜批发', value: 'seafood', icon: '🦐', description: '客户订单管理、急单处理、截单提醒', plugins: ['seafood'] },
+                            { label: '餐饮配送', value: 'fooddelivery', icon: '🍽️', description: '商品管理、订单处理、促销活动', plugins: ['fooddelivery'] },
+                            { label: '教育培训', value: 'education', icon: '📚', description: '课程管理、学员管理、学习进度', plugins: ['education'] },
+                            { label: '房产中介', value: 'realestate', icon: '🏠', description: '房源管理、客户管理、智能匹配', plugins: ['realestate'] },
+                            { label: '旅行社', value: 'travel', icon: '✈️', description: '线路管理、群配置、报名处理', plugins: ['travel'] },
+                            { label: '工地管理', value: 'construction', icon: '🏗️', description: '工人打卡、工期管理、安全检查', plugins: ['construction'] },
+                        ];
+                        pluginDetails.value = {
+                            seafood: { id: 'seafood', name: '海鲜批发插件', icon: '🦐', description: '客户订单管理、急单处理、截单提醒、报表统计', required: true },
+                            fooddelivery: { id: 'fooddelivery', name: '餐饮配送插件', icon: '🍽️', description: '商品管理、订单处理、桌台管理、促销活动', required: true },
+                            education: { id: 'education', name: '教育培训插件', icon: '📚', description: '课程管理、学员管理、教师管理、学习进度', required: true },
+                            realestate: { id: 'realestate', name: '房产中介插件', icon: '🏠', description: '房源管理、客户管理、智能匹配、交易管理', required: true },
+                            travel: { id: 'travel', name: '旅行社插件', icon: '✈️', description: '线路管理、群配置、报名处理、自动回复', required: true },
+                            construction: { id: 'construction', name: '工地管理插件', icon: '🏗️', description: '工人打卡、工期管理、安全检查、材料管理', required: true },
+                            core: { id: 'core', name: '核心功能插件', icon: '⚙️', description: '订单解析、消息捕获、规则引擎、报表生成', required: true },
+                        };
+                        industriesLoaded.value = true;
+                    }
                     setTimeout(() => {
-                        addMessage('bot', 
+                        addMessage('bot',
                             '您好！欢迎使用 AI IMBot 智能桌面机器人工具。<br><br>为了给您提供更好的服务，请告诉我您所在的行业：',
                             {
-                                quickReplies: industries
+                                quickReplies: industries.value
                             }
                         );
                     }, 500);

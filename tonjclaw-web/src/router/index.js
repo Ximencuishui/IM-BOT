@@ -138,6 +138,12 @@ const routes = [
         meta: { title: '系统设置' }
       },
       {
+        path: 'plugins',
+        name: 'AdminPlugins',
+        component: () => import('../views/admin/Plugins/index.vue'),
+        meta: { title: '插件管理' }
+      },
+      {
         path: 'permissions',
         name: 'AdminPermissions',
         component: () => import('../views/admin/Permissions/index.vue'),

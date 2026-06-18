@@ -389,6 +389,141 @@ def init_future_plugins(db):
         print(f"预留插件创建成功: {plugin_data['plugin_name']}")
 
 
+def init_desktop_plugins(db):
+    """初始化桌面端插件（Sim.Bot Node.js 插件注册表）"""
+    desktop_plugins = [
+        {
+            'plugin_code': 'knowledge-base',
+            'plugin_name': '知识库插件',
+            'description': '桌面端知识库管理，支持自动回复匹配、知识文档管理、智能搜索',
+            'short_description': '桌面端知识库管理',
+            'category': 'desktop',
+            'industry': '',
+            'icon_url': '',
+            'tags': '桌面,知识库,自动回复',
+            'compatibility': '2.0+',
+            'is_public': True,
+            'is_featured': False,
+            'is_active': True,
+            'is_deprecated': False,
+            'versions': [
+                {
+                    'version': '1.0.0',
+                    'changelog': '初始版本',
+                    'download_url': '',
+                    'file_size': 0,
+                    'dependencies': '[]',
+                    'required_permissions': '',
+                    'is_stable': True,
+                    'is_active': True
+                }
+            ]
+        },
+        {
+            'plugin_code': 'membership',
+            'plugin_name': '会员卡插件',
+            'description': '桌面端会员卡管理，支持办卡、销卡、充值、计次消费和会员统计',
+            'short_description': '桌面端会员卡管理',
+            'category': 'desktop',
+            'industry': '',
+            'icon_url': '',
+            'tags': '桌面,会员卡,充值,计次',
+            'compatibility': '2.0+',
+            'is_public': True,
+            'is_featured': False,
+            'is_active': True,
+            'is_deprecated': False,
+            'versions': [
+                {
+                    'version': '1.0.0',
+                    'changelog': '初始版本',
+                    'download_url': '',
+                    'file_size': 0,
+                    'dependencies': '[]',
+                    'required_permissions': '',
+                    'is_stable': True,
+                    'is_active': True
+                }
+            ]
+        },
+        {
+            'plugin_code': 'appointment',
+            'plugin_name': '预约管理插件',
+            'description': '桌面端预约管理，支持时间槽管理、预约创建、状态流转和统计',
+            'short_description': '桌面端预约管理',
+            'category': 'desktop',
+            'industry': '',
+            'icon_url': '',
+            'tags': '桌面,预约,时间槽,状态流转',
+            'compatibility': '2.0+',
+            'is_public': True,
+            'is_featured': False,
+            'is_active': True,
+            'is_deprecated': False,
+            'versions': [
+                {
+                    'version': '1.0.0',
+                    'changelog': '初始版本',
+                    'download_url': '',
+                    'file_size': 0,
+                    'dependencies': '[]',
+                    'required_permissions': '',
+                    'is_stable': True,
+                    'is_active': True
+                }
+            ]
+        },
+        {
+            'plugin_code': 'desktop-industry',
+            'plugin_name': '行业综合管理插件',
+            'description': '桌面端行业综合管理，依赖知识库、会员卡和预约管理插件',
+            'short_description': '桌面端行业综合管理',
+            'category': 'desktop',
+            'industry': '',
+            'icon_url': '',
+            'tags': '桌面,行业,综合管理',
+            'compatibility': '2.0+',
+            'is_public': True,
+            'is_featured': False,
+            'is_active': True,
+            'is_deprecated': False,
+            'versions': [
+                {
+                    'version': '1.0.0',
+                    'changelog': '初始版本',
+                    'download_url': '',
+                    'file_size': 0,
+                    'dependencies': '[{"plugin_code": "knowledge-base", "min_version": "1.0.0"}, {"plugin_code": "membership", "min_version": "1.0.0"}, {"plugin_code": "appointment", "min_version": "1.0.0"}]',
+                    'required_permissions': '',
+                    'is_stable': True,
+                    'is_active': True
+                }
+            ]
+        }
+    ]
+
+    for plugin_data in desktop_plugins:
+        existing = db.query(PluginPackage).filter(
+            PluginPackage.plugin_code == plugin_data['plugin_code']
+        ).first()
+
+        if existing:
+            print(f"桌面插件已存在: {plugin_data['plugin_name']}")
+            continue
+
+        plugin = PluginPackage(**{k: v for k, v in plugin_data.items() if k != 'versions'})
+        db.add(plugin)
+        db.commit()
+        db.refresh(plugin)
+
+        for version_data in plugin_data['versions']:
+            version = PluginVersion(package_id=plugin.id, **version_data)
+            db.add(version)
+
+        db.commit()
+        print(f"桌面插件创建成功: {plugin_data['plugin_name']}")
+
+
 def main():
     """主函数"""
     print("=" * 60)
@@ -407,6 +542,9 @@ def main():
 
         print("\n3. 初始化预留插件...")
         init_future_plugins(db)
+
+        print("\n4. 初始化桌面端插件...")
+        init_desktop_plugins(db)
 
         print("\n" + "=" * 60)
         print("插件初始化完成！")

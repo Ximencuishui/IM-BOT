@@ -42,6 +42,11 @@ import {
   syncGroupDisplayMetaFromCache,
 } from '../db/chatroom_cache_store.js';
 import {
+  isShopRelatedMessage,
+  buildShopHelpText,
+} from '../services/shop_bot_handler.js';
+import { pluginManager } from '../plugins/manager.js';
+import {
   tryRedeemGroupCardMessage,
   isWhitelistJoinMessage,
   parseGroupCardMessage,
@@ -1231,6 +1236,39 @@ async function processMessage(obj, db, logger, hookClient) {
       }
     }
 
+    // ---- 插件消息处理器 ----
+    if (!skipReason && wxGid && orderText) {
+      const senderWxid = resolveSenderWxid(ex) || ex.senderWxid || '';
+      const senderNick = ex.senderNick || '';
+      const pluginHandlers = pluginManager.getHandlers('inboundMessage');
+      for (const handler of pluginHandlers) {
+        try {
+          const ctx = { db, logger, hookClient };
+          const pluginReply = await handler(ctx, orderText, senderWxid, senderNick);
+          if (pluginReply) {
+            await enqueueOutboundReply(
+              {
+                type: 'text_reply',
+                groupId: ex.groupId,
+                senderWxid,
+                senderNick,
+                originalContent: ex.originalContent,
+                targetWxid: ex.groupId || senderWxid,
+                replyText: pluginReply,
+                ruleName: 'plugin:handler',
+              },
+              logger
+            );
+            skipReason = 'plugin_handled';
+            logger.info(`[plugin] replied room=${ex.groupId}: ${pluginReply.slice(0, 80)}`);
+            break;
+          }
+        } catch (e) {
+          logger.error(`[plugin] handler error: ${e.message}`);
+        }
+      }
+    }
+
     if (!skipReason) {
       const rules = db
         .prepare(
@@ -1416,7 +1454,35 @@ async function processMessage(obj, db, logger, hookClient) {
         }
       }
     } else {
-      skipReason = 'no_group_id_private_or_empty';
+      // 私聊消息 - 插件老板指令处理
+      const senderWxid = resolveSenderWxid(ex) || ex.senderWxid || '';
+      const pluginBossHandlers = pluginManager.getHandlers('bossCommand');
+      for (const handler of pluginBossHandlers) {
+        try {
+          const ctx = { db, logger, hookClient };
+          const pluginReply = await handler(ctx, ex.content);
+          if (pluginReply) {
+            await enqueueOutboundReply(
+              {
+                type: 'text_reply',
+                senderWxid,
+                targetWxid: senderWxid,
+                replyText: pluginReply,
+                ruleName: 'plugin:boss',
+              },
+              logger
+            );
+            skipReason = 'plugin_boss_handled';
+            logger.info(`[plugin-boss] replied to ${senderWxid}: ${pluginReply.slice(0, 80)}`);
+            break;
+          }
+        } catch (e) {
+          logger.error(`[plugin] boss handler error: ${e.message}`);
+        }
+      }
+      if (!skipReason) {
+        skipReason = 'no_group_id_private_or_empty';
+      }
     }
   }
 

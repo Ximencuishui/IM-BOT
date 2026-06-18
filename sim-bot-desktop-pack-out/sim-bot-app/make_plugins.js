@@ -1,0 +1,1 @@
+const fs = require('fs'); const p = 'd:/1/TonjClaw/sim-bot-desktop-pack-out/sim-bot-app/plugins'; fs.mkdirSync(p + '/knowledge-base', { recursive: true }); fs.mkdirSync(p + '/membership', { recursive: true }); fs.mkdirSync(p + '/appointment', { recursive: true });

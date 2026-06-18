@@ -64,15 +64,42 @@ def get_plugin(plugin_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@plugin_bp.route('/install', methods=['POST'])
 @plugin_bp.route('/install/<int:plugin_id>', methods=['POST'])
 @login_required
-def install_plugin(plugin_id):
+def install_plugin(plugin_id=None):
     """
     安装插件
-    Body: {"version": "1.0.0"}
+    支持两种调用方式：
+    1. POST /api/plugin/install/<plugin_id>
+    2. POST /api/plugin/install  Body: {"plugin_code": "seafood"} 或 {"plugin_id": 1}
     """
     try:
         data = request.get_json() or {}
+
+        # 如果 URL 中未提供 plugin_id，尝试从 body 中获取
+        if plugin_id is None:
+            body_id = data.get('plugin_id')
+            plugin_code = data.get('plugin_code')
+            if body_id is not None:
+                plugin_id = int(body_id)
+            elif plugin_code:
+                # 通过 plugin_code 查找
+                from models.plugin_models import PluginPackage
+                db_lookup: Session = get_db_session()
+                try:
+                    pkg = db_lookup.query(PluginPackage).filter(
+                        PluginPackage.plugin_code == plugin_code
+                    ).first()
+                    if pkg:
+                        plugin_id = pkg.id
+                    else:
+                        return jsonify({'success': False, 'error': f'插件不存在: {plugin_code}'}), 404
+                finally:
+                    db_lookup.close()
+            else:
+                return jsonify({'success': False, 'error': '缺少插件ID或插件代码'}), 400
+
         version = data.get('version', None)
 
         db: Session = get_db_session()
@@ -90,13 +117,41 @@ def install_plugin(plugin_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@plugin_bp.route('/uninstall', methods=['POST'])
 @plugin_bp.route('/uninstall/<int:plugin_id>', methods=['POST'])
 @login_required
-def uninstall_plugin(plugin_id):
+def uninstall_plugin(plugin_id=None):
     """
     卸载插件
+    支持两种调用方式：
+    1. POST /api/plugin/uninstall/<plugin_id>
+    2. POST /api/plugin/uninstall  Body: {"plugin_code": "seafood"} 或 {"plugin_id": 1}
     """
     try:
+        data = request.get_json() or {}
+
+        # 如果 URL 中未提供 plugin_id，尝试从 body 中获取
+        if plugin_id is None:
+            body_id = data.get('plugin_id')
+            plugin_code = data.get('plugin_code')
+            if body_id is not None:
+                plugin_id = int(body_id)
+            elif plugin_code:
+                from models.plugin_models import PluginPackage
+                db_lookup: Session = get_db_session()
+                try:
+                    pkg = db_lookup.query(PluginPackage).filter(
+                        PluginPackage.plugin_code == plugin_code
+                    ).first()
+                    if pkg:
+                        plugin_id = pkg.id
+                    else:
+                        return jsonify({'success': False, 'error': f'插件不存在: {plugin_code}'}), 404
+                finally:
+                    db_lookup.close()
+            else:
+                return jsonify({'success': False, 'error': '缺少插件ID或插件代码'}), 400
+
         db: Session = get_db_session()
         user = get_current_user_from_request(db)
 
@@ -567,6 +622,33 @@ def get_user_plugin_stats():
         return jsonify({'success': True, 'stats': stats}), 200
     except Exception as e:
         logger.error(f"获取用户插件统计数据失败: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@plugin_bp.route('/admin/plugins', methods=['GET'])
+@admin_required
+def admin_list_plugins():
+    """
+    获取全部插件列表（管理后台）
+    Query: category=xxx, industry=xxx, search=xxx, status=active|inactive|deprecated
+    """
+    try:
+        category = request.args.get('category')
+        industry = request.args.get('industry')
+        search = request.args.get('search')
+        status = request.args.get('status')
+
+        db: Session = get_db_session()
+        plugins = plugin_service.list_admin_plugins(db, category, industry, search, status)
+        db.close()
+
+        return jsonify({
+            'success': True,
+            'count': len(plugins),
+            'plugins': plugins
+        }), 200
+    except Exception as e:
+        logger.error(f"获取管理后台插件列表失败: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

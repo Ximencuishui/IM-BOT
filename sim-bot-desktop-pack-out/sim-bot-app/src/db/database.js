@@ -88,6 +88,8 @@ function applyIncrementalMigrations(sqlDb) {
   migrateAliasFixSanYouLianXiao(sqlDb);
   migratePlaySpecRoutesAndAliases(sqlDb);
   migrateAliasFixPingTeErLian(sqlDb);
+  migrateOnlineLicense(sqlDb);
+  migrateShopSchema(sqlDb);
 }
 
 function migrateAliasFixPingTeErLian(sqlDb) {
@@ -1067,6 +1069,140 @@ function migrateProductSetup(sqlDb) {
     ]);
   } catch (e) {
     console.warn('migrateProductSetup:', e?.message || e);
+  }
+}
+
+/** 在线授权表：存储从云端获取的授权信息 */
+function migrateOnlineLicense(sqlDb) {
+  try {
+    sqlDb.exec(`
+      CREATE TABLE IF NOT EXISTS online_license (
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        user_id INTEGER NOT NULL,
+        email TEXT NOT NULL,
+        auth_token TEXT,
+        expires_at TEXT NOT NULL,
+        subscription_type TEXT DEFAULT '',
+        max_groups INTEGER DEFAULT 3,
+        last_sync_at TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+  } catch (e) {
+    console.warn('migrateOnlineLicense:', e?.message || e);
+  }
+}
+
+/** 行业管理：知识库、店铺信息、服务项目、预约、会员卡 */
+function migrateShopSchema(sqlDb) {
+  try {
+    sqlDb.exec(`
+
+      -- 知识库
+      CREATE TABLE IF NOT EXISTS shop_knowledge_base (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        question TEXT NOT NULL,
+        answer TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'custom' CHECK(category IN ('builtin','custom','boss')),
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+
+      -- 店铺信息
+      CREATE TABLE IF NOT EXISTS shop_info (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL DEFAULT '',
+        address TEXT NOT NULL DEFAULT '',
+        latitude REAL DEFAULT 0,
+        longitude REAL DEFAULT 0,
+        phone TEXT DEFAULT '',
+        business_hours TEXT DEFAULT '',
+        description TEXT DEFAULT '',
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+
+      -- 服务项目
+      CREATE TABLE IF NOT EXISTS shop_services (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        category TEXT DEFAULT '',
+        duration_minutes INTEGER DEFAULT 60,
+        price REAL DEFAULT 0,
+        original_price REAL DEFAULT 0,
+        description TEXT DEFAULT '',
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+
+      -- 预约
+      CREATE TABLE IF NOT EXISTS shop_appointments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_name TEXT NOT NULL,
+        customer_phone TEXT DEFAULT '',
+        customer_wxid TEXT DEFAULT '',
+        service_id INTEGER,
+        staff_name TEXT DEFAULT '',
+        appointment_date TEXT NOT NULL,
+        start_time TEXT NOT NULL,
+        end_time TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','confirmed','completed','cancelled')),
+        notes TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_shop_appointments_date ON shop_appointments(appointment_date);
+      CREATE INDEX IF NOT EXISTS idx_shop_appointments_status ON shop_appointments(status);
+
+      -- 会员卡
+      CREATE TABLE IF NOT EXISTS shop_membership_cards (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        card_no TEXT UNIQUE NOT NULL,
+        customer_name TEXT NOT NULL,
+        customer_phone TEXT DEFAULT '',
+        customer_wxid TEXT DEFAULT '',
+        total_services INTEGER NOT NULL DEFAULT 0,
+        used_services INTEGER NOT NULL DEFAULT 0,
+        remaining_services INTEGER NOT NULL DEFAULT 0,
+        start_date TEXT DEFAULT (datetime('now')),
+        expire_date TEXT,
+        status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','expired','disabled')),
+        notes TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_shop_membership_cards_no ON shop_membership_cards(card_no);
+      CREATE INDEX IF NOT EXISTS idx_shop_membership_cards_wxid ON shop_membership_cards(customer_wxid);
+      CREATE INDEX IF NOT EXISTS idx_shop_membership_cards_status ON shop_membership_cards(status);
+
+      -- 会员卡使用记录
+      CREATE TABLE IF NOT EXISTS shop_membership_usage (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        card_id INTEGER NOT NULL,
+        service_id INTEGER,
+        used_at TEXT DEFAULT (datetime('now')),
+        notes TEXT DEFAULT ''
+      );
+      CREATE INDEX IF NOT EXISTS idx_shop_membership_usage_card ON shop_membership_usage(card_id);
+
+      -- 待老板回答问题
+      CREATE TABLE IF NOT EXISTS shop_pending_questions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        question TEXT NOT NULL,
+        asker_name TEXT DEFAULT '',
+        asker_wxid TEXT DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','answered')),
+        answer TEXT DEFAULT '',
+        answered_at TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_shop_pending_questions_status ON shop_pending_questions(status);
+
+    `);
+  } catch (e) {
+    console.warn('migrateShopSchema:', e?.message || e);
   }
 }
 

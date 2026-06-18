@@ -454,6 +454,8 @@ class CommandConfig(Base):
     patterns = Column(Text, comment='正则表达式列表(JSON)')
     response_template = Column(Text, comment='回复模板')
     description = Column(String(255), comment='指令描述')
+    examples = Column(Text, comment='使用示例(JSON)')
+    param_schema = Column(Text, comment='参数提取规则(JSON)')
     is_active = Column(TinyInteger, default=1, comment='是否启用')
     usage_count = Column(Integer, default=0, comment='使用次数统计')
     created_at = Column(DateTime, default=datetime.now, comment='创建时间')
@@ -468,6 +470,8 @@ class CommandConfig(Base):
             'patterns': json.loads(self.patterns) if self.patterns else [],
             'response_template': self.response_template,
             'description': self.description,
+            'examples': json.loads(self.examples) if self.examples else [],
+            'param_schema': json.loads(self.param_schema) if self.param_schema else {},
             'is_active': self.is_active,
             'usage_count': self.usage_count,
             'created_at': self.created_at.isoformat() if self.created_at else None

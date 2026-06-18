@@ -152,10 +152,19 @@ class AuthService:
         # 生成token
         token = AuthService.generate_token(user.id, user.email)
 
+        # 构建授权信息
+        license_info = {
+            'expires_at': user.subscription_expires_at.isoformat() if user.subscription_expires_at else None,
+            'subscription_type': user.subscription_type,
+            'max_groups': user.max_groups,
+            'is_valid': user.is_subscription_valid
+        }
+
         result = {
             'success': True,
             'user': user.to_dict(),
             'token': token,
+            'license': license_info,
         }
         if demo_license:
             result['demo_license'] = demo_license

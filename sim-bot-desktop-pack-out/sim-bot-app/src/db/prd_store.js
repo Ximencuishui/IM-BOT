@@ -15,6 +15,7 @@ import {
 import { formatSqliteUtcForDisplay } from '../util/datetime.js';
 import { validateAliasEntry } from '../commands/alias_guard.js';
 import { getWechatLoginWxid } from './wechat_login_store.js';
+import { isOnlineLicenseValid, getOnlineLicenseExpireDisplay, getOnlineLicense } from './online_license_store.js';
 
 function todayYmdLocal() {
   const d = new Date();
@@ -73,6 +74,16 @@ export function applyPendingInstallRobotLicense(db) {
 
 export function isRobotLicenseValid(db) {
   if (process.env.SKIP_PRODUCT_SETUP === '1') return true;
+
+  // 优先检查在线授权
+  const onlineLic = getOnlineLicense(db);
+  if (onlineLic && onlineLic.expires_at) {
+    const now = new Date();
+    const exp = new Date(onlineLic.expires_at);
+    if (exp > now) return true;
+  }
+
+  // 回退到离线激活码授权
   const row = getRobotConfig(db);
   if (!row) {
     if (isProductSetupCompleted(db)) return false;
@@ -215,6 +226,12 @@ export function getPrdWechatProfile(db) {
   const nick = db.prepare(`SELECT value FROM app_settings WHERE key = 'bot_display_nick'`).get();
   const avatar = db.prepare(`SELECT value FROM app_settings WHERE key = 'bot_display_avatar'`).get();
   const wxid = loginWxid || robot?.wxid || '';
+
+  // 获取在线授权信息
+  const onlineLic = getOnlineLicense(db);
+  const onlineExpire = getOnlineLicenseExpireDisplay(db);
+  const onlineValid = isOnlineLicenseValid(db);
+
   return {
     wxid,
     login_wxid: loginWxid,
@@ -223,6 +240,16 @@ export function getPrdWechatProfile(db) {
     avatar_url: avatar?.value || '',
     expire_date: robot?.expire_date || '',
     expire_display: formatExpireDisplayYmd(robot?.expire_date),
+    // 在线授权信息
+    online_auth: onlineLic ? {
+      email: onlineLic.email,
+      expires_at: onlineLic.expires_at,
+      expire_display: onlineExpire,
+      valid: onlineValid,
+      subscription_type: onlineLic.subscription_type,
+      last_sync_at: onlineLic.last_sync_at,
+    } : null,
+    license_source: onlineValid ? 'online' : (robot?.expire_date ? 'offline' : 'none'),
   };
 }
 

@@ -7,7 +7,11 @@ from plugins.base.base_service import BaseService
 from plugins.construction.models import (
     Worker, AttendanceRecord, LeaveRecord, WeatherRecord, ProjectSchedule,
     WorkArea, WorkAreaAssignment, WorkAreaProgress, WorkVolumeRecord,
-    Material, MaterialRecord, SafetyCheck, SafetyIssue, QualityCheck
+    Material, MaterialRecord, SafetyCheck, SafetyIssue, QualityCheck,
+    ConstructionSite, WorkerSalary, SalaryCalculation, PlanWorkVolume,
+    DailyWorkVolume, ExpenseCategory, ExpenseRecord, Consumable,
+    ConsumableRecord, EquipmentLease, FinancialRecord, MessageInstruction,
+    OperationLog
 )
 
 logger = logging.getLogger(__name__)
@@ -526,3 +530,649 @@ class ConstructionService(BaseService):
             'pending_safety_issues': len(safety_issues),
             'work_volume_count': len(work_volume_records),
         }
+
+    def create_site(self, site_data: Dict) -> Dict:
+        try:
+            site = ConstructionSite(
+                site_name=site_data['site_name'],
+                location=site_data.get('location', ''),
+                contract_no=site_data['contract_no'],
+                contract_unit_price=site_data.get('contract_unit_price', 0),
+                contract_total_amount=site_data.get('contract_total_amount', 0),
+                contract_total_volume=site_data.get('contract_total_volume', 0),
+                forecast_volume=site_data.get('forecast_volume', 0),
+                start_date=site_data.get('start_date'),
+                end_date=site_data.get('end_date'),
+                status=site_data.get('status', 'in_progress'),
+                remark=site_data.get('remark', ''),
+            )
+            self.db.add(site)
+            self.db.commit()
+            self.db.refresh(site)
+            return {'success': True, 'data': site.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def list_sites(self, status: Optional[str] = None) -> List[Dict]:
+        query = self.db.query(ConstructionSite)
+        if status:
+            query = query.filter(ConstructionSite.status == status)
+        return [s.to_dict() for s in query.order_by(ConstructionSite.created_at.desc()).all()]
+
+    def get_site(self, site_id: int) -> Dict:
+        site = self.db.query(ConstructionSite).filter(ConstructionSite.id == site_id).first()
+        if not site:
+            return {'success': False, 'error': '工地不存在'}
+        return {'success': True, 'data': site.to_dict()}
+
+    def update_site(self, site_id: int, site_data: Dict) -> Dict:
+        site = self.db.query(ConstructionSite).filter(ConstructionSite.id == site_id).first()
+        if not site:
+            return {'success': False, 'error': '工地不存在'}
+
+        try:
+            if 'site_name' in site_data:
+                site.site_name = site_data['site_name']
+            if 'location' in site_data:
+                site.location = site_data['location']
+            if 'contract_unit_price' in site_data:
+                site.contract_unit_price = site_data['contract_unit_price']
+            if 'contract_total_amount' in site_data:
+                site.contract_total_amount = site_data['contract_total_amount']
+            if 'contract_total_volume' in site_data:
+                site.contract_total_volume = site_data['contract_total_volume']
+            if 'forecast_volume' in site_data:
+                site.forecast_volume = site_data['forecast_volume']
+            if 'status' in site_data:
+                site.status = site_data['status']
+            if 'remark' in site_data:
+                site.remark = site_data['remark']
+
+            self.db.commit()
+            self.db.refresh(site)
+            return {'success': True, 'data': site.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def delete_site(self, site_id: int) -> Dict:
+        site = self.db.query(ConstructionSite).filter(ConstructionSite.id == site_id).first()
+        if not site:
+            return {'success': False, 'error': '工地不存在'}
+
+        try:
+            self.db.delete(site)
+            self.db.commit()
+            return {'success': True, 'message': '删除成功'}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def set_worker_salary(self, salary_data: Dict) -> Dict:
+        try:
+            salary = WorkerSalary(
+                worker_id=salary_data['worker_id'],
+                salary_standard=salary_data['salary_standard'],
+                salary_type=salary_data.get('salary_type', 'daily'),
+                position=salary_data.get('position', ''),
+                join_date=salary_data['join_date'],
+                leave_date=salary_data.get('leave_date'),
+                site_id=salary_data.get('site_id'),
+            )
+            self.db.add(salary)
+            self.db.commit()
+            self.db.refresh(salary)
+            return {'success': True, 'data': salary.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def update_worker_salary(self, salary_id: int, salary_data: Dict) -> Dict:
+        salary = self.db.query(WorkerSalary).filter(WorkerSalary.id == salary_id).first()
+        if not salary:
+            return {'success': False, 'error': '薪资记录不存在'}
+
+        try:
+            if 'salary_standard' in salary_data:
+                salary.salary_standard = salary_data['salary_standard']
+            if 'salary_type' in salary_data:
+                salary.salary_type = salary_data['salary_type']
+            if 'position' in salary_data:
+                salary.position = salary_data['position']
+            if 'site_id' in salary_data:
+                salary.site_id = salary_data['site_id']
+            if 'leave_date' in salary_data:
+                salary.leave_date = salary_data['leave_date']
+
+            self.db.commit()
+            self.db.refresh(salary)
+            return {'success': True, 'data': salary.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def calculate_salary(self, worker_id: int, period_start: date, period_end: date) -> Dict:
+        salary_info = self.db.query(WorkerSalary).filter(
+            WorkerSalary.worker_id == worker_id,
+            WorkerSalary.leave_date.is_(None) | (WorkerSalary.leave_date >= period_start)
+        ).order_by(WorkerSalary.id.desc()).first()
+
+        if not salary_info:
+            return {'success': False, 'error': '未找到薪资信息'}
+
+        attendance_records = self.db.query(AttendanceRecord).filter(
+            AttendanceRecord.worker_id == worker_id,
+            AttendanceRecord.date >= period_start,
+            AttendanceRecord.date <= period_end
+        ).all()
+
+        leave_records = self.db.query(LeaveRecord).filter(
+            LeaveRecord.worker_id == worker_id,
+            LeaveRecord.status == 'approved',
+            LeaveRecord.start_date <= period_end,
+            LeaveRecord.end_date >= period_start
+        ).all()
+
+        work_days = len(attendance_records)
+        overtime_hours = sum(float(r.overtime_hours or 0) for r in attendance_records)
+
+        leave_days = 0
+        for leave in leave_records:
+            overlap_start = max(leave.start_date, period_start)
+            overlap_end = min(leave.end_date, period_end)
+            if overlap_start <= overlap_end:
+                leave_days += (overlap_end - overlap_start).days + 1
+
+        base_salary = float(salary_info.salary_standard) * work_days
+        overtime_salary = float(salary_info.salary_standard) * overtime_hours / 8 * 1.5
+        leave_deduction = float(salary_info.salary_standard) * leave_days
+        total_salary = base_salary + overtime_salary - leave_deduction
+
+        try:
+            calc_record = SalaryCalculation(
+                worker_id=worker_id,
+                calc_period='monthly',
+                period_start=period_start,
+                period_end=period_end,
+                base_salary=base_salary,
+                overtime_salary=overtime_salary,
+                leave_deduction=leave_deduction,
+                total_salary=total_salary,
+            )
+            self.db.add(calc_record)
+            self.db.commit()
+            self.db.refresh(calc_record)
+            return {'success': True, 'data': calc_record.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def get_salary_report(self, period_start: date, period_end: date) -> Dict:
+        records = self.db.query(SalaryCalculation).filter(
+            SalaryCalculation.period_start >= period_start,
+            SalaryCalculation.period_end <= period_end
+        ).all()
+
+        total_salary = sum(float(r.total_salary or 0) for r in records)
+        total_workers = len(set(r.worker_id for r in records))
+
+        return {
+            'success': True,
+            'data': {
+                'period_start': period_start.isoformat(),
+                'period_end': period_end.isoformat(),
+                'total_workers': total_workers,
+                'total_salary': round(total_salary, 2),
+                'details': [r.to_dict() for r in records]
+            }
+        }
+
+    def set_plan_volume(self, plan_data: Dict) -> Dict:
+        try:
+            plan = PlanWorkVolume(
+                site_id=plan_data['site_id'],
+                work_type=plan_data['work_type'],
+                period_type=plan_data.get('period_type', 'daily'),
+                period_start=plan_data['period_start'],
+                period_end=plan_data.get('period_end'),
+                plan_volume=plan_data['plan_volume'],
+                unit=plan_data['unit'],
+            )
+            self.db.add(plan)
+            self.db.commit()
+            self.db.refresh(plan)
+            return {'success': True, 'data': plan.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def report_daily_volume(self, volume_data: Dict) -> Dict:
+        try:
+            daily = DailyWorkVolume(
+                site_id=volume_data['site_id'],
+                work_type=volume_data['work_type'],
+                work_date=volume_data.get('work_date', date.today()),
+                actual_volume=volume_data['actual_volume'],
+                unit=volume_data['unit'],
+                reporter_id=volume_data.get('reporter_id'),
+                remark=volume_data.get('remark', ''),
+            )
+            self.db.add(daily)
+            self.db.commit()
+            self.db.refresh(daily)
+            return {'success': True, 'data': daily.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def get_work_volume_stats(self, site_id: int, period_start: date, period_end: date) -> Dict:
+        plan_records = self.db.query(PlanWorkVolume).filter(
+            PlanWorkVolume.site_id == site_id,
+            PlanWorkVolume.period_start >= period_start,
+            PlanWorkVolume.period_end <= period_end
+        ).all()
+
+        daily_records = self.db.query(DailyWorkVolume).filter(
+            DailyWorkVolume.site_id == site_id,
+            DailyWorkVolume.work_date >= period_start,
+            DailyWorkVolume.work_date <= period_end
+        ).all()
+
+        plan_total = sum(float(p.plan_volume or 0) for p in plan_records)
+        actual_total = sum(float(d.actual_volume or 0) for d in daily_records)
+
+        deviation = 0
+        if plan_total > 0:
+            deviation = (actual_total - plan_total) / plan_total * 100
+
+        work_types = {}
+        for daily in daily_records:
+            work_types[daily.work_type] = work_types.get(daily.work_type, 0) + float(daily.actual_volume or 0)
+
+        return {
+            'success': True,
+            'data': {
+                'site_id': site_id,
+                'period_start': period_start.isoformat(),
+                'period_end': period_end.isoformat(),
+                'plan_total': round(plan_total, 2),
+                'actual_total': round(actual_total, 2),
+                'deviation': round(deviation, 2),
+                'work_types': work_types,
+                'details': [d.to_dict() for d in daily_records]
+            }
+        }
+
+    def create_expense_category(self, category_data: Dict) -> Dict:
+        try:
+            category = ExpenseCategory(
+                category_name=category_data['category_name'],
+                category_code=category_data['category_code'],
+                parent_id=category_data.get('parent_id'),
+                sort_order=category_data.get('sort_order', 0),
+                status=category_data.get('status', 'active'),
+            )
+            self.db.add(category)
+            self.db.commit()
+            self.db.refresh(category)
+            return {'success': True, 'data': category.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def list_expense_categories(self) -> List[Dict]:
+        return [c.to_dict() for c in self.db.query(ExpenseCategory).filter(
+            ExpenseCategory.status == 'active'
+        ).order_by(ExpenseCategory.sort_order).all()]
+
+    def report_expense(self, expense_data: Dict) -> Dict:
+        try:
+            expense = ExpenseRecord(
+                site_id=expense_data['site_id'],
+                category_id=expense_data['category_id'],
+                amount=expense_data['amount'],
+                expense_date=expense_data.get('expense_date', date.today()),
+                reporter_id=expense_data.get('reporter_id'),
+                remark=expense_data.get('remark', ''),
+                receipt_image=expense_data.get('receipt_image'),
+            )
+            self.db.add(expense)
+            self.db.commit()
+            self.db.refresh(expense)
+            return {'success': True, 'data': expense.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def get_expense_report(self, site_id: int, period_start: date, period_end: date) -> Dict:
+        records = self.db.query(ExpenseRecord).filter(
+            ExpenseRecord.site_id == site_id,
+            ExpenseRecord.expense_date >= period_start,
+            ExpenseRecord.expense_date <= period_end
+        ).all()
+
+        total_amount = sum(float(r.amount or 0) for r in records)
+
+        categories = {}
+        for record in records:
+            categories[record.category_id] = categories.get(record.category_id, 0) + float(record.amount or 0)
+
+        return {
+            'success': True,
+            'data': {
+                'site_id': site_id,
+                'period_start': period_start.isoformat(),
+                'period_end': period_end.isoformat(),
+                'total_amount': round(total_amount, 2),
+                'categories': categories,
+                'details': [r.to_dict() for r in records]
+            }
+        }
+
+    def create_consumable(self, consumable_data: Dict) -> Dict:
+        try:
+            consumable = Consumable(
+                consumable_name=consumable_data['consumable_name'],
+                consumable_type=consumable_data.get('consumable_type'),
+                spec=consumable_data.get('spec', ''),
+                unit=consumable_data['unit'],
+                stock=consumable_data.get('stock', 0),
+                min_stock=consumable_data.get('min_stock', 0),
+                status=consumable_data.get('status', 'active'),
+            )
+            self.db.add(consumable)
+            self.db.commit()
+            self.db.refresh(consumable)
+            return {'success': True, 'data': consumable.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def consumable_in(self, consumable_id: int, site_id: int, quantity: float, operator_id: int = None) -> Dict:
+        consumable = self.db.query(Consumable).filter(Consumable.id == consumable_id).first()
+        if not consumable:
+            return {'success': False, 'error': '耗材不存在'}
+
+        try:
+            record = ConsumableRecord(
+                consumable_id=consumable_id,
+                site_id=site_id,
+                record_type='in',
+                quantity=quantity,
+                operator_id=operator_id,
+            )
+            consumable.stock += quantity
+
+            self.db.add(record)
+            self.db.commit()
+            self.db.refresh(record)
+            return {'success': True, 'data': record.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def consumable_out(self, consumable_id: int, site_id: int, quantity: float, operator_id: int = None, remark: str = '') -> Dict:
+        consumable = self.db.query(Consumable).filter(Consumable.id == consumable_id).first()
+        if not consumable:
+            return {'success': False, 'error': '耗材不存在'}
+
+        if consumable.stock < quantity:
+            return {'success': False, 'error': '库存不足'}
+
+        try:
+            record = ConsumableRecord(
+                consumable_id=consumable_id,
+                site_id=site_id,
+                record_type='out',
+                quantity=quantity,
+                operator_id=operator_id,
+                remark=remark,
+            )
+            consumable.stock -= quantity
+
+            self.db.add(record)
+            self.db.commit()
+            self.db.refresh(record)
+            return {'success': True, 'data': record.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def get_consumable_stats(self, period_start: date, period_end: date) -> Dict:
+        records = self.db.query(ConsumableRecord).filter(
+            ConsumableRecord.created_at >= period_start,
+            ConsumableRecord.created_at <= period_end
+        ).all()
+
+        in_total = sum(float(r.quantity or 0) for r in records if r.record_type == 'in')
+        out_total = sum(float(r.quantity or 0) for r in records if r.record_type == 'out')
+
+        consumables = {}
+        for record in records:
+            key = record.consumable_id
+            if key not in consumables:
+                consumables[key] = {'in': 0, 'out': 0}
+            if record.record_type == 'in':
+                consumables[key]['in'] += float(record.quantity or 0)
+            else:
+                consumables[key]['out'] += float(record.quantity or 0)
+
+        low_stock_items = self.db.query(Consumable).filter(
+            Consumable.stock <= Consumable.min_stock,
+            Consumable.status == 'active'
+        ).all()
+
+        return {
+            'success': True,
+            'data': {
+                'period_start': period_start.isoformat(),
+                'period_end': period_end.isoformat(),
+                'in_total': round(in_total, 2),
+                'out_total': round(out_total, 2),
+                'consumables': consumables,
+                'low_stock_items': [c.to_dict() for c in low_stock_items]
+            }
+        }
+
+    def create_equipment_lease(self, lease_data: Dict) -> Dict:
+        try:
+            lease = EquipmentLease(
+                equipment_name=lease_data['equipment_name'],
+                equipment_type=lease_data.get('equipment_type'),
+                equipment_no=lease_data.get('equipment_no'),
+                site_id=lease_data['site_id'],
+                lessor=lease_data.get('lessor', ''),
+                lease_start_date=lease_data['lease_start_date'],
+                lease_end_date=lease_data['lease_end_date'],
+                lease_unit_price=lease_data.get('lease_unit_price', 0),
+                lease_total_amount=lease_data.get('lease_total_amount', 0),
+                paid_amount=lease_data.get('paid_amount', 0),
+                unpaid_amount=lease_data.get('unpaid_amount', 0),
+                status=lease_data.get('status', 'leasing'),
+                remark=lease_data.get('remark', ''),
+            )
+            self.db.add(lease)
+            self.db.commit()
+            self.db.refresh(lease)
+            return {'success': True, 'data': lease.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def get_lease_expiring(self, days_before: int = 7) -> List[Dict]:
+        today = date.today()
+        expire_date = today + timedelta(days=days_before)
+
+        leases = self.db.query(EquipmentLease).filter(
+            EquipmentLease.lease_end_date <= expire_date,
+            EquipmentLease.lease_end_date >= today,
+            EquipmentLease.status == 'leasing'
+        ).all()
+
+        return [l.to_dict() for l in leases]
+
+    def get_lease_cost_report(self, site_id: int, period_start: date, period_end: date) -> Dict:
+        records = self.db.query(EquipmentLease).filter(
+            EquipmentLease.site_id == site_id,
+            EquipmentLease.lease_start_date <= period_end,
+            EquipmentLease.lease_end_date >= period_start,
+            EquipmentLease.status != 'returned'
+        ).all()
+
+        total_cost = sum(float(r.lease_total_amount or 0) for r in records)
+        unpaid_total = sum(float(r.unpaid_amount or 0) for r in records)
+
+        equipment_types = {}
+        for record in records:
+            equipment_types[record.equipment_type] = equipment_types.get(record.equipment_type, 0) + float(record.lease_total_amount or 0)
+
+        return {
+            'success': True,
+            'data': {
+                'site_id': site_id,
+                'period_start': period_start.isoformat(),
+                'period_end': period_end.isoformat(),
+                'total_cost': round(total_cost, 2),
+                'unpaid_total': round(unpaid_total, 2),
+                'equipment_types': equipment_types,
+                'details': [r.to_dict() for r in records]
+            }
+        }
+
+    def create_financial_record(self, record_data: Dict) -> Dict:
+        try:
+            record = FinancialRecord(
+                record_type=record_data['record_type'],
+                income_source=record_data.get('income_source'),
+                expense_category=record_data.get('expense_category'),
+                amount=record_data['amount'],
+                record_date=record_data.get('record_date', date.today()),
+                site_id=record_data.get('site_id'),
+                contract_no=record_data.get('contract_no'),
+                receivable_amount=record_data.get('receivable_amount', 0),
+                received_amount=record_data.get('received_amount', 0),
+                unpaid_amount=record_data.get('unpaid_amount', 0),
+                overdue_days=record_data.get('overdue_days', 0),
+                remark=record_data.get('remark', ''),
+            )
+            self.db.add(record)
+            self.db.commit()
+            self.db.refresh(record)
+            return {'success': True, 'data': record.to_dict()}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}
+
+    def get_financial_report(self, period_start: date, period_end: date) -> Dict:
+        records = self.db.query(FinancialRecord).filter(
+            FinancialRecord.record_date >= period_start,
+            FinancialRecord.record_date <= period_end
+        ).all()
+
+        income_total = sum(float(r.amount or 0) for r in records if r.record_type == 'income')
+        expense_total = sum(float(r.amount or 0) for r in records if r.record_type == 'expense')
+        profit = income_total - expense_total
+
+        receivable_total = sum(float(r.receivable_amount or 0) for r in records)
+        received_total = sum(float(r.received_amount or 0) for r in records)
+        unpaid_total = sum(float(r.unpaid_amount or 0) for r in records)
+
+        return {
+            'success': True,
+            'data': {
+                'period_start': period_start.isoformat(),
+                'period_end': period_end.isoformat(),
+                'income_total': round(income_total, 2),
+                'expense_total': round(expense_total, 2),
+                'profit': round(profit, 2),
+                'profit_rate': round(profit / income_total * 100, 2) if income_total > 0 else 0,
+                'receivable_total': round(receivable_total, 2),
+                'received_total': round(received_total, 2),
+                'unpaid_total': round(unpaid_total, 2),
+                'recovery_rate': round(received_total / receivable_total * 100, 2) if receivable_total > 0 else 0,
+                'details': [r.to_dict() for r in records]
+            }
+        }
+
+    def parse_message(self, message_text: str) -> Dict:
+        try:
+            from services.command_config_service import command_config_service
+
+            match_result = command_config_service.match_command(message_text)
+
+            if match_result:
+                command_name = match_result['command_name']
+
+                if ':' in command_name:
+                    plugin_name, action = command_name.split(':', 1)
+                    if plugin_name == 'construction':
+                        return {
+                            'instruction_type': action,
+                            'keyword': match_result.get('matched_type'),
+                            'template': match_result.get('response_template'),
+                            'raw_text': message_text,
+                            'command_name': command_name,
+                            'confidence': match_result.get('confidence'),
+                        }
+
+                return {
+                    'instruction_type': command_name,
+                    'keyword': match_result.get('matched_type'),
+                    'template': match_result.get('response_template'),
+                    'raw_text': message_text,
+                    'command_name': command_name,
+                    'confidence': match_result.get('confidence'),
+                }
+
+            instructions = self.db.query(MessageInstruction).filter(
+                MessageInstruction.enabled == 1
+            ).all()
+
+            for instr in instructions:
+                if instr.keyword in message_text:
+                    return {
+                        'instruction_type': instr.instruction_type,
+                        'keyword': instr.keyword,
+                        'template': instr.template,
+                        'raw_text': message_text,
+                    }
+
+            return {'instruction_type': 'unknown', 'raw_text': message_text}
+
+        except ImportError:
+            instructions = self.db.query(MessageInstruction).filter(
+                MessageInstruction.enabled == 1
+            ).all()
+
+            for instr in instructions:
+                if instr.keyword in message_text:
+                    return {
+                        'instruction_type': instr.instruction_type,
+                        'keyword': instr.keyword,
+                        'template': instr.template,
+                        'raw_text': message_text,
+                    }
+
+            return {'instruction_type': 'unknown', 'raw_text': message_text}
+        except Exception as e:
+            logger.error(f"消息解析失败: {e}", exc_info=True)
+            return {'instruction_type': 'unknown', 'raw_text': message_text, 'error': str(e)}
+
+    def add_operation_log(self, operator_id: int, operator_name: str, operation_type: str,
+                           operation_object: str, operation_content: str, ip_address: str = '') -> Dict:
+        try:
+            log = OperationLog(
+                operator_id=operator_id,
+                operator_name=operator_name,
+                operation_type=operation_type,
+                operation_object=operation_object,
+                operation_content=operation_content,
+                ip_address=ip_address,
+            )
+            self.db.add(log)
+            self.db.commit()
+            return {'success': True}
+        except Exception as e:
+            self.db.rollback()
+            return {'success': False, 'error': str(e)}

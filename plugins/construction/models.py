@@ -436,3 +436,388 @@ class QualityCheck(Base):
             'remark': self.remark,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class ConstructionSite(Base):
+    __tablename__ = 't_field_site'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    site_name = Column(String(200), nullable=False)
+    location = Column(String(500))
+    contract_no = Column(String(100), unique=True)
+    contract_unit_price = Column(Numeric(10, 2), default=0.00)
+    contract_total_amount = Column(Numeric(12, 2), default=0.00)
+    contract_total_volume = Column(Numeric(12, 2), default=0.00)
+    forecast_volume = Column(Numeric(12, 2), default=0.00)
+    start_date = Column(Date)
+    end_date = Column(Date)
+    status = Column(String(20), default='in_progress')
+    remark = Column(String(1000))
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'site_name': self.site_name,
+            'location': self.location,
+            'contract_no': self.contract_no,
+            'contract_unit_price': float(self.contract_unit_price) if self.contract_unit_price else 0.00,
+            'contract_total_amount': float(self.contract_total_amount) if self.contract_total_amount else 0.00,
+            'contract_total_volume': float(self.contract_total_volume) if self.contract_total_volume else 0.00,
+            'forecast_volume': float(self.forecast_volume) if self.forecast_volume else 0.00,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'status': self.status,
+            'remark': self.remark,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class WorkerSalary(Base):
+    __tablename__ = 't_field_worker_salary'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    worker_id = Column(Integer, ForeignKey('t_construction_worker.id'), nullable=False)
+    salary_standard = Column(Numeric(10, 2), nullable=False)
+    salary_type = Column(String(20), default='daily')
+    position = Column(String(100))
+    join_date = Column(Date, nullable=False)
+    leave_date = Column(Date)
+    site_id = Column(Integer, ForeignKey('t_field_site.id'))
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'worker_id': self.worker_id,
+            'salary_standard': float(self.salary_standard) if self.salary_standard else 0.00,
+            'salary_type': self.salary_type,
+            'position': self.position,
+            'join_date': self.join_date.isoformat() if self.join_date else None,
+            'leave_date': self.leave_date.isoformat() if self.leave_date else None,
+            'site_id': self.site_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class SalaryCalculation(Base):
+    __tablename__ = 't_field_salary_calc'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    worker_id = Column(Integer, ForeignKey('t_construction_worker.id'), nullable=False)
+    calc_period = Column(String(20), nullable=False)
+    period_start = Column(Date, nullable=False)
+    period_end = Column(Date, nullable=False)
+    base_salary = Column(Numeric(10, 2), default=0.00)
+    overtime_salary = Column(Numeric(10, 2), default=0.00)
+    leave_deduction = Column(Numeric(10, 2), default=0.00)
+    piecework_salary = Column(Numeric(10, 2), default=0.00)
+    total_salary = Column(Numeric(10, 2), default=0.00)
+    paid_status = Column(String(20), default='unpaid')
+    paid_date = Column(Date)
+    created_at = Column(DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'worker_id': self.worker_id,
+            'calc_period': self.calc_period,
+            'period_start': self.period_start.isoformat() if self.period_start else None,
+            'period_end': self.period_end.isoformat() if self.period_end else None,
+            'base_salary': float(self.base_salary) if self.base_salary else 0.00,
+            'overtime_salary': float(self.overtime_salary) if self.overtime_salary else 0.00,
+            'leave_deduction': float(self.leave_deduction) if self.leave_deduction else 0.00,
+            'piecework_salary': float(self.piecework_salary) if self.piecework_salary else 0.00,
+            'total_salary': float(self.total_salary) if self.total_salary else 0.00,
+            'paid_status': self.paid_status,
+            'paid_date': self.paid_date.isoformat() if self.paid_date else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class PlanWorkVolume(Base):
+    __tablename__ = 't_field_plan_volume'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    site_id = Column(Integer, ForeignKey('t_field_site.id'), nullable=False)
+    work_type = Column(String(50), nullable=False)
+    period_type = Column(String(20), default='daily')
+    period_start = Column(Date, nullable=False)
+    period_end = Column(Date)
+    plan_volume = Column(Numeric(12, 2), nullable=False)
+    unit = Column(String(20), nullable=False)
+    created_at = Column(DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'site_id': self.site_id,
+            'work_type': self.work_type,
+            'period_type': self.period_type,
+            'period_start': self.period_start.isoformat() if self.period_start else None,
+            'period_end': self.period_end.isoformat() if self.period_end else None,
+            'plan_volume': float(self.plan_volume) if self.plan_volume else 0.00,
+            'unit': self.unit,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class DailyWorkVolume(Base):
+    __tablename__ = 't_field_daily_volume'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    site_id = Column(Integer, ForeignKey('t_field_site.id'), nullable=False)
+    work_type = Column(String(50), nullable=False)
+    work_date = Column(Date, nullable=False)
+    actual_volume = Column(Numeric(12, 2), nullable=False)
+    unit = Column(String(20), nullable=False)
+    reporter_id = Column(Integer, ForeignKey('t_construction_worker.id'))
+    remark = Column(String(500))
+    created_at = Column(DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'site_id': self.site_id,
+            'work_type': self.work_type,
+            'work_date': self.work_date.isoformat() if self.work_date else None,
+            'actual_volume': float(self.actual_volume) if self.actual_volume else 0.00,
+            'unit': self.unit,
+            'reporter_id': self.reporter_id,
+            'remark': self.remark,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class ExpenseCategory(Base):
+    __tablename__ = 't_field_expense_category'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    category_name = Column(String(100), nullable=False)
+    category_code = Column(String(50), unique=True)
+    parent_id = Column(Integer, ForeignKey('t_field_expense_category.id'))
+    sort_order = Column(Integer, default=0)
+    status = Column(String(20), default='active')
+    created_at = Column(DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'category_name': self.category_name,
+            'category_code': self.category_code,
+            'parent_id': self.parent_id,
+            'sort_order': self.sort_order,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class ExpenseRecord(Base):
+    __tablename__ = 't_field_expense_record'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    site_id = Column(Integer, ForeignKey('t_field_site.id'), nullable=False)
+    category_id = Column(Integer, ForeignKey('t_field_expense_category.id'), nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False)
+    expense_date = Column(Date, nullable=False)
+    reporter_id = Column(Integer, ForeignKey('t_construction_worker.id'))
+    remark = Column(String(1000))
+    receipt_image = Column(String(500))
+    created_at = Column(DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'site_id': self.site_id,
+            'category_id': self.category_id,
+            'amount': float(self.amount) if self.amount else 0.00,
+            'expense_date': self.expense_date.isoformat() if self.expense_date else None,
+            'reporter_id': self.reporter_id,
+            'remark': self.remark,
+            'receipt_image': self.receipt_image,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class Consumable(Base):
+    __tablename__ = 't_field_consumable'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    consumable_name = Column(String(200), nullable=False)
+    consumable_type = Column(String(50))
+    spec = Column(String(200))
+    unit = Column(String(20), nullable=False)
+    stock = Column(Numeric(10, 2), default=0.00)
+    min_stock = Column(Numeric(10, 2), default=0.00)
+    status = Column(String(20), default='active')
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'consumable_name': self.consumable_name,
+            'consumable_type': self.consumable_type,
+            'spec': self.spec,
+            'unit': self.unit,
+            'stock': float(self.stock) if self.stock else 0.00,
+            'min_stock': float(self.min_stock) if self.min_stock else 0.00,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class ConsumableRecord(Base):
+    __tablename__ = 't_field_consumable_record'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    consumable_id = Column(Integer, ForeignKey('t_field_consumable.id'), nullable=False)
+    site_id = Column(Integer, ForeignKey('t_field_site.id'), nullable=False)
+    record_type = Column(String(20), nullable=False)
+    quantity = Column(Numeric(10, 2), nullable=False)
+    operator_id = Column(Integer, ForeignKey('t_construction_worker.id'))
+    remark = Column(String(500))
+    created_at = Column(DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'consumable_id': self.consumable_id,
+            'site_id': self.site_id,
+            'record_type': self.record_type,
+            'quantity': float(self.quantity) if self.quantity else 0.00,
+            'operator_id': self.operator_id,
+            'remark': self.remark,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class EquipmentLease(Base):
+    __tablename__ = 't_field_equipment_lease'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    equipment_name = Column(String(200), nullable=False)
+    equipment_type = Column(String(50))
+    equipment_no = Column(String(100))
+    site_id = Column(Integer, ForeignKey('t_field_site.id'), nullable=False)
+    lessor = Column(String(200))
+    lease_start_date = Column(Date, nullable=False)
+    lease_end_date = Column(Date, nullable=False)
+    lease_unit_price = Column(Numeric(10, 2), default=0.00)
+    lease_total_amount = Column(Numeric(12, 2), default=0.00)
+    paid_amount = Column(Numeric(12, 2), default=0.00)
+    unpaid_amount = Column(Numeric(12, 2), default=0.00)
+    status = Column(String(20), default='leasing')
+    remark = Column(String(1000))
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'equipment_name': self.equipment_name,
+            'equipment_type': self.equipment_type,
+            'equipment_no': self.equipment_no,
+            'site_id': self.site_id,
+            'lessor': self.lessor,
+            'lease_start_date': self.lease_start_date.isoformat() if self.lease_start_date else None,
+            'lease_end_date': self.lease_end_date.isoformat() if self.lease_end_date else None,
+            'lease_unit_price': float(self.lease_unit_price) if self.lease_unit_price else 0.00,
+            'lease_total_amount': float(self.lease_total_amount) if self.lease_total_amount else 0.00,
+            'paid_amount': float(self.paid_amount) if self.paid_amount else 0.00,
+            'unpaid_amount': float(self.unpaid_amount) if self.unpaid_amount else 0.00,
+            'status': self.status,
+            'remark': self.remark,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class FinancialRecord(Base):
+    __tablename__ = 't_field_financial_record'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    record_type = Column(String(20), nullable=False)
+    income_source = Column(String(50))
+    expense_category = Column(String(50))
+    amount = Column(Numeric(12, 2), nullable=False)
+    record_date = Column(Date, nullable=False)
+    site_id = Column(Integer, ForeignKey('t_field_site.id'))
+    contract_no = Column(String(100))
+    receivable_amount = Column(Numeric(12, 2), default=0.00)
+    received_amount = Column(Numeric(12, 2), default=0.00)
+    unpaid_amount = Column(Numeric(12, 2), default=0.00)
+    overdue_days = Column(Integer, default=0)
+    remark = Column(String(1000))
+    created_at = Column(DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'record_type': self.record_type,
+            'income_source': self.income_source,
+            'expense_category': self.expense_category,
+            'amount': float(self.amount) if self.amount else 0.00,
+            'record_date': self.record_date.isoformat() if self.record_date else None,
+            'site_id': self.site_id,
+            'contract_no': self.contract_no,
+            'receivable_amount': float(self.receivable_amount) if self.receivable_amount else 0.00,
+            'received_amount': float(self.received_amount) if self.received_amount else 0.00,
+            'unpaid_amount': float(self.unpaid_amount) if self.unpaid_amount else 0.00,
+            'overdue_days': self.overdue_days or 0,
+            'remark': self.remark,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class MessageInstruction(Base):
+    __tablename__ = 't_field_message_instruction'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    instruction_type = Column(String(50), nullable=False)
+    keyword = Column(String(100), nullable=False)
+    template = Column(String(500))
+    description = Column(String(500))
+    enabled = Column(TinyInteger, default=1)
+    created_at = Column(DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'instruction_type': self.instruction_type,
+            'keyword': self.keyword,
+            'template': self.template,
+            'description': self.description,
+            'enabled': self.enabled,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class OperationLog(Base):
+    __tablename__ = 't_field_operation_log'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    operator_id = Column(Integer, ForeignKey('t_construction_worker.id'))
+    operator_name = Column(String(100))
+    operation_type = Column(String(50), nullable=False)
+    operation_object = Column(String(200))
+    operation_content = Column(String(1000))
+    ip_address = Column(String(50))
+    created_at = Column(DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'operator_id': self.operator_id,
+            'operator_name': self.operator_name,
+            'operation_type': self.operation_type,
+            'operation_object': self.operation_object,
+            'operation_content': self.operation_content,
+            'ip_address': self.ip_address,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }

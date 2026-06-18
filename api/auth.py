@@ -130,6 +130,29 @@ def get_current_user():
         db.close()
 
 
+@auth_bp.route('/license', methods=['GET'])
+@login_required
+def get_license_info():
+    """获取当前用户的授权信息"""
+    db: Session = get_db_session()
+    try:
+        user = get_current_user_from_request(db)
+        if not user:
+            return jsonify({'success': False, 'error': '用户不存在'}), 404
+
+        return jsonify({
+            'success': True,
+            'license': {
+                'expires_at': user.subscription_expires_at.isoformat() if user.subscription_expires_at else None,
+                'subscription_type': user.subscription_type,
+                'max_groups': user.max_groups,
+                'is_valid': user.is_subscription_valid
+            }
+        }), 200
+    finally:
+        db.close()
+
+
 @auth_bp.route('/profile', methods=['PUT'])
 @login_required
 def update_profile():

@@ -1,6 +1,8 @@
 """
 数据统计服务
 提供多维度统计数据，支持图表展示
+
+优化: 高频查询使用本地缓存，减少数据库压力
 """
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -8,12 +10,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from models.models import Order, OrderItem, Product, Customer
 from models.user_models import User
+from utils.cache import cached
 
 
 class DashboardService:
     """数据看板服务"""
 
     @staticmethod
+    @cached(ttl=30, key_prefix='overview', ignore_args=(0,))
     def get_overview_stats(db: Session, user_id: int, period: str = 'today') -> Dict:
         """
         获取概览统计数据
@@ -72,6 +76,7 @@ class DashboardService:
         }
 
     @staticmethod
+    @cached(ttl=60, key_prefix='sales_chart', ignore_args=(0,))
     def get_sales_chart_data(db: Session, user_id: int, days: int = 7) -> Dict:
         """
         获取销售趋势图表数据（折线图）
@@ -117,6 +122,7 @@ class DashboardService:
         }
 
     @staticmethod
+    @cached(ttl=120, key_prefix='product_ranking', ignore_args=(0,))
     def get_product_ranking(db: Session, user_id: int, limit: int = 10,
                             period: str = 'week') -> Dict:
         """

@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.5",
+    "esbuild": "^0.28.1",
     "eslint": "^10.2.0",
     "prettier": "^3.8.3",
     "rolldown": "^1.0.3",

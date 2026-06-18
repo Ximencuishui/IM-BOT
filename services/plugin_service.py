@@ -188,6 +188,46 @@ class PluginService:
     """插件管理服务"""
 
     @staticmethod
+    def list_admin_plugins(db: Session, category: str = None, industry: str = None,
+                           search: str = None, status: str = None) -> List[Dict]:
+        """
+        获取全部插件列表（管理后台用，不过滤状态）
+        status: 'active' | 'inactive' | 'deprecated' | None
+        """
+        query = db.query(PluginPackage)
+
+        if category:
+            query = query.filter(PluginPackage.category == category)
+        if industry:
+            query = query.filter(PluginPackage.industry == industry)
+        if status == 'active':
+            query = query.filter(
+                PluginPackage.is_public == True,
+                PluginPackage.is_active == True,
+                PluginPackage.is_deprecated == False
+            )
+        elif status == 'inactive':
+            query = query.filter(
+                or_(PluginPackage.is_public == False, PluginPackage.is_active == False)
+            )
+        elif status == 'deprecated':
+            query = query.filter(PluginPackage.is_deprecated == True)
+        if search:
+            search_pattern = f"%{search}%"
+            query = query.filter(or_(
+                PluginPackage.plugin_name.like(search_pattern),
+                PluginPackage.plugin_code.like(search_pattern),
+                PluginPackage.description.like(search_pattern),
+                PluginPackage.tags.like(search_pattern)
+            ))
+
+        plugins = query.order_by(
+            PluginPackage.created_at.desc()
+        ).all()
+
+        return [p.to_dict() for p in plugins]
+
+    @staticmethod
     def list_plugins(db: Session, category: str = None, industry: str = None,
                      featured_only: bool = False, search: str = None) -> List[Dict]:
         """
